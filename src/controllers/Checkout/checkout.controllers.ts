@@ -3,6 +3,7 @@ import Cart from '../../models/cart.models';
 import Order from '../../models/order.models'; // Assume an Order schema exists
 import { v4 as uuidv4 } from 'uuid'; // For generating unique Order IDs
 import { CustomError } from '../../utils/error';
+import {createPayment} from '../Payment/Payment.controller';
 
 export const checkoutCart = async (req: Request, res: Response) => {
     const roleCheck = await checkUserRoleAndPermission(['Admin', 'Customer'], ['AddItem', 'CancelOrder'])(req);
@@ -41,12 +42,15 @@ export const checkoutCart = async (req: Request, res: Response) => {
         // Mark the cart as inactive
         cart.IsActive = false;
         await cart.save();
+        const razorpayOrder = await createPayment(orderId);
+        // console.log('razorpayOrder===')
         return new Response(JSON.stringify({
             message: "Checkout successful. Order created.",
             order: {
                 OrderId: orderId,
                 Items: cart.Items,
                 TotalPrice: totalPrice,
+                razorpayOrder
             },
             success: true,
             statusCode: 200
