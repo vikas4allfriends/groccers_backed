@@ -165,3 +165,105 @@ export const updateProduct = async (req: NextRequest) => {
         throw error;
     }
 }
+
+import ProductCategory from "../../models/productCategory.models";
+
+export const getProductsByEachCategory = async (req) => {
+  try {
+    const categoriesWithProducts = await ProductCategory.aggregate([
+      { $match: { IsActive: true, IsDeleted: false } }, // Step 1: Match active categories
+      {
+        $lookup: {
+          from: "products", // Step 2: Lookup products
+          localField: "_id",
+          foreignField: "ProductCategoryId",
+          as: "products",
+          pipeline: [
+            { $match: { IsActive: true, IsDeleted: false } },
+            { $limit: 10 },
+            {
+              $lookup: { // Join with MeasuringUnit
+                from: "measuringunits",
+                localField: "MeasuringUnitId",
+                foreignField: "_id",
+                as: "measuringUnit",
+              },
+            },
+            { $unwind: { path: "$measuringUnit", preserveNullAndEmptyArrays: true } },
+            {
+              $lookup: { // Join with ProductImages
+                from: "productimages",
+                localField: "_id",
+                foreignField: "ProductId",
+                as: "productImages",
+              },
+            },
+          ],
+        },
+      },
+      {
+        $match: { "products.0": { $exists: true } }, // Step 3: Remove categories without products
+      },
+      {
+        $project: { // Step 4: Project the required fields
+          productCategory: {
+            _id: "$_id",
+            name: "$name",
+            categoryImage: "$CategoryImageUrl",
+          },
+          products: {
+            $map: {
+              input: "$products",
+              as: "product",
+              in: {
+                _id: "$$product._id",
+                name: "$$product.Name",
+                description: "$$product.Description",
+                price: "$$product.Price",
+                tags: { $arrayElemAt: ["$$product.Tags", 0] },
+                productCategory: {
+                  _id: "$_id",
+                  name: "$name",
+                  categoryImage: "$CategoryImageUrl",
+                },
+                measuringUnit: {
+                  _id: "$$product.measuringUnit._id",
+                  name: "$$product.measuringUnit.Name",
+                },
+                productImages: {
+                  $map: {
+                    input: "$$product.productImages",
+                    as: "image",
+                    in: {
+                      _id: "$$image._id",
+                      productId: "$$image.ProductId",
+                      imageUrl: "$$image.imageUrl",
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+    ]);
+
+    return new Response(
+      JSON.stringify({
+        success: true,
+        data: categoriesWithProducts,
+      }),
+      { status: 200, headers: { "Content-Type": "application/json" } }
+    );
+  } catch (error) {
+    console.error("Error fetching products by category:", error);
+    return new Response(
+      JSON.stringify({
+        success: false,
+        message: "Error fetching products by category",
+      }),
+      { status: 500, headers: { "Content-Type": "application/json" } }
+    );
+  }
+};
+

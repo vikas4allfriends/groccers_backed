@@ -3,7 +3,7 @@ import Country from '../../../models/location.models';
 
 
 export const addCountry = async(req:Request) =>{
-    dbConnect()
+    await dbConnect()
     const { countryName } = await req.json();
         console.log('countryName===', countryName)
         // Validate input

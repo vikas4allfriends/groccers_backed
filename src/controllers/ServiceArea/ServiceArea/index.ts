@@ -101,7 +101,7 @@ export const SearchServiceArea = async (req: Request) => {
                 { status: 404 }
             );
         }
-
+        // console.log('serviceAreas===', serviceAreas)
         return new Response(
             JSON.stringify({
                 success: true,
