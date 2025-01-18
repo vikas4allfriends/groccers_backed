@@ -42,6 +42,11 @@ const ProductSchema = new mongoose.Schema({
         type: Number,
         required: true
     },
+    Quantity: {
+        type: Number,
+        required: true,
+        default: 0, // Default to zero
+    },
     Tags: {
         type: [String],  // Array of strings for tags
         required:true,
@@ -67,6 +72,12 @@ const ProductSchema = new mongoose.Schema({
 }, {
     timestamps: true  // Automatically add createdAt and updatedAt fields
 });
+
+// Middleware to update `IsActive` based on `Quantity`
+// ProductSchema.pre('save', function (next) {
+//     this.IsActive = this.Quantity > 0;
+//     next();
+// });
 
 // Create or retrieve the Product model
 const Product = mongoose.models.Product || mongoose.model('Product', ProductSchema);
