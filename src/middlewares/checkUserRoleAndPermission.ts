@@ -8,13 +8,14 @@ export const checkUserRoleAndPermission = (requiredRoles: string[] = [], require
         try {
             await dbConnect();
             const authHeader = req.headers.get('authorization');
+            // console.log('authHeader==',authHeader)
             if (!authHeader || !authHeader.startsWith('Bearer ')) {
                 return new Response(JSON.stringify({ message: 'Access token is missing' }), { status: 401 });
             }
 
             const token = authHeader.split(' ')[1];
             const decodedToken: any = jwt.verify(token, process.env.JWT_SECRET);
-
+            // console.log('decodedToken===', decodedToken)
             // Extract user ID from token payload
             const userId = decodedToken.id;
 
@@ -39,7 +40,7 @@ export const checkUserRoleAndPermission = (requiredRoles: string[] = [], require
                     },
                 },
             ]);
-
+            // console.log('user==', users)
             const user = users[0];
             if (!user) {
                 return new Response(JSON.stringify({ message: 'User not found or unauthorized' }), { status: 401 });

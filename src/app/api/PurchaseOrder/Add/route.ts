@@ -1,4 +1,4 @@
 import { asyncHandler } from '../../../../utils/asyncHandler'
-import {PurchaseItems} from '../../../../controllers/PurchaseOrder';
+import {AddPurchaseOrder} from '../../../../controllers/PurchaseOrder';
 
-export const POST = asyncHandler(PurchaseItems)
+export const POST = asyncHandler(AddPurchaseOrder)

@@ -1,5 +1,5 @@
 import { checkUserRoleAndPermission } from '../../middlewares/checkUserRoleAndPermission';
-import MeasuringUnit from '../../models/measuringUnit.models'; // Ensure correct path to the model
+import MeasuringUnit from '../../models/MeasuringUnit'; // Ensure correct path to the model
 import { CustomError } from '../../utils/error';
 import { type NextRequest } from 'next/server'
 import ValidateIncomingDataWithZodSchema from '../../utils/ValidateIncomingDataWithZodSchema';
@@ -7,19 +7,20 @@ import { CreateMeasuringUnitSchema, UpdateMeasuringUnitSchema } from '../../zod_
 
 // Create a new MeasuringUnit
 export const createMeasuringUnit = async (req: Request) => {
-    const roleCheck = await checkUserRoleAndPermission(['Admin', 'Customer'], ['AddItem', 'CancelOrder'])(req);
+    const roleCheck = await checkUserRoleAndPermission(['Admin', 'Customer'], ['AddItem', 'CancelOrder','Admin'])(req);
     // If the middleware returns a Response object (e.g., error), return it immediately
     if (roleCheck instanceof Response) {
         return roleCheck;
     }
     console.log('roleCheck==', roleCheck.user._id)
     try {
-        const { name } = await req.json();
-        const data = { name }
+        const { Name, Description } = await req.json();
+        const data = { Name, Description }
         await ValidateIncomingDataWithZodSchema(CreateMeasuringUnitSchema, data)
 
         const measuringUnit = new MeasuringUnit({
-            Name: name,
+            Name,
+            Description,
             CreatedById: roleCheck.user._id,
             LastUpdatedById: roleCheck.user._id  // Set both to CreatedById initially
         });
@@ -33,20 +34,20 @@ export const createMeasuringUnit = async (req: Request) => {
 
 // Update an existing MeasuringUnit by ID
 export const updateMeasuringUnit = async (req: NextRequest, res: Response) => {
-    const roleCheck = await checkUserRoleAndPermission(['Admin', 'Customer'], ['AddItem', 'CancelOrder'])(req);
+    const roleCheck = await checkUserRoleAndPermission(['Admin', 'Customer'], ['AddItem', 'CancelOrder','Admin'])(req);
     // If the middleware returns a Response object (e.g., error), return it immediately
     if (roleCheck instanceof Response) {
         return roleCheck;
     }
     try {
-        const { measuringUnitId, Name, IsActive, IsDeleted } = await req.json();
-        const data = {measuringUnitId, Name, IsActive, IsDeleted}
+        const { measuringUnitId, Name, Description, IsActive, IsDeleted } = await req.json();
+        const data = {measuringUnitId, Name, Description, IsActive, IsDeleted}
         console.log('roleCheck.user._id===', roleCheck.user._id, typeof(roleCheck.user._id.toString()))
         await ValidateIncomingDataWithZodSchema(UpdateMeasuringUnitSchema, data)
         const updatedMeasuringUnit = await MeasuringUnit.findByIdAndUpdate(
             measuringUnitId,
             {
-                $set: { Name, IsActive, IsDeleted, LastUpdatedById: roleCheck.user._id.toString() }
+                $set: { Name, IsActive, Description, IsDeleted, LastUpdatedById: roleCheck.user._id.toString() }
             },
             { new: true, runValidators: true }  // Return updated doc and run validations
         );
@@ -62,7 +63,7 @@ export const updateMeasuringUnit = async (req: NextRequest, res: Response) => {
 
 // // Get a MeasuringUnit by ID
 export const getAllMeasuringUnits = async (req: Request, res: Response) => {
-    const roleCheck = await checkUserRoleAndPermission(['Admin', 'Customer'], ['AddItem', 'CancelOrder'])(req);
+    const roleCheck = await checkUserRoleAndPermission(['Admin', 'Customer'], ['AddItem', 'CancelOrder', 'Admin'])(req);
     // If the middleware returns a Response object (e.g., error), return it immediately
     if (roleCheck instanceof Response) {
         return roleCheck;
@@ -80,7 +81,7 @@ export const getAllMeasuringUnits = async (req: Request, res: Response) => {
                 $facet: {
                     data: [ // Retrieve sorted data
                         { $match: {} }, // Match all documents
-                        { $project: { _id: 1, Name: 1 } } // Project only _id and name fields
+                        { $project: { _id: 1, Name: 1, Description:1 } } // Project only _id and name fields
                     ],
                     totalRecords: [ // Retrieve total record count
                         { $count: 'total' }

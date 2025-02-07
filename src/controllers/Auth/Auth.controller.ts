@@ -8,7 +8,7 @@ import jwt from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
 import { error } from 'console';
 
-export const SignUp = async (req: Request) => {
+export const SignUp1 = async (req: Request) => {
   // Connect to the database
   await dbConnect();
 
@@ -17,13 +17,13 @@ export const SignUp = async (req: Request) => {
   const data = { username, role, password, email };
   console.log('email---', email)
   // Check for missing username or password
-  if (!username || !password) {
-    throw new CustomError("Username and password are required", 400);
+  if (!username || !password || !role) {
+    throw new CustomError("Username, password and role are required", 400);
   }
 
   // Check if username already exists
   const user = await userModel.findOne({ username }).lean<IUser>() as IUser | null;;  // Correct typing for user
-  // console.log('user==', user)
+  console.log('user==', user)
   // const user: IUser | null = await userModel.findOne({ username });  // Proper typing for user
   // Validation function using Zod
   const validateSignUpData = async (signUpData) => {
@@ -67,10 +67,17 @@ export const SignUp = async (req: Request) => {
     try {
       const salt = await bcrypt.genSalt(10);
       const secPass = await bcrypt.hash(password, salt);
+      console.log('username secPass role email', username,
+        secPass,
+        role,
+        email,)
+        console.log(typeof(role))
+        const RoleObj = await Role.findOne({ name:role });  // Proper typing for email check
+        console.log('roleId--', RoleObj._id)
       const newUser = new userModel({
         username,
         password:secPass,
-        role,
+        role:RoleObj._id,
         email,
       });
       const savedUser = await newUser.save();
@@ -97,6 +104,82 @@ export const SignUp = async (req: Request) => {
       headers: { "Content-Type": "application/json" },
     }
   );
+};
+
+export const SignUp = async (req: Request) => {
+  try {
+    // Connect to the database
+    await dbConnect();
+
+    // Parse request body safely
+    let username, role, password, email;
+    try {
+      ({ username, role, password, email } = await req.json());
+    } catch (error) {
+      throw new CustomError("Invalid request body", 400);
+    }
+
+    console.log('email---', email);
+
+    // Validate required fields
+    if (!username || !password || !role) {
+      throw new CustomError("Username, password, and role are required", 400);
+    }
+
+    // Check if username or email already exists
+    const existingUser = await userModel.findOne({
+      $or: [{ username }, { email }]
+    }).lean();
+
+    if (existingUser) {
+      if (existingUser.username === username) {
+        throw new CustomError("Username is already taken", 400);
+      }
+      if (existingUser.email === email) {
+        throw new CustomError("Email is already in use", 400);
+      }
+    }
+
+    // Validate role existence
+    const RoleObj = await Role.findOne({ name: role });
+    if (!RoleObj) {
+      throw new CustomError(`Role '${role}' not found`, 400);
+    }
+    console.log('RoleObj==',RoleObj)
+    // Hash password
+    const salt = await bcrypt.genSalt(10);
+    const secPass = await bcrypt.hash(password, salt);
+    console.log('Creating user:', { username, password: secPass, role, email });
+
+    // Create new user
+    const newUser = new userModel({
+      username,
+      password: secPass,
+      role: RoleObj._id,
+      email,
+    });
+
+    const savedUser = await newUser.save();
+    console.log('User saved successfully:', savedUser);
+
+    // Return success response
+    return new Response(
+      JSON.stringify({ success: true, message: "User sign-up successful", statusCode: 200 }),
+      {
+        status: 200,
+        headers: { "Content-Type": "application/json" },
+      }
+    );
+  } catch (err) {
+    console.error("Signup Error:", err);
+    return new Response(
+      JSON.stringify({ success: false, message: err.message, statusCode: err.statusCode || 500 }),
+      {
+        status: err.statusCode || 500,
+        headers: { "Content-Type": "application/json" },
+      }
+    );
+  }
 };
 
 

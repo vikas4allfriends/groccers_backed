@@ -5,7 +5,7 @@ import { v4 as uuidv4 } from 'uuid'; // For generating unique Order IDs
 import { CustomError } from '../../utils/error';
 import { createPayment } from '../Payment/Payment.controller';
 
-export const checkoutCart = async (req: Request, res: Response) => {
+export const checkoutCart1 = async (req: Request, res: Response) => {
     const roleCheck = await checkUserRoleAndPermission(['Admin', 'Customer'], ['AddItem', 'CancelOrder'])(req);
 
     const requestBody = await req.json();
@@ -126,3 +126,115 @@ export const checkoutCart = async (req: Request, res: Response) => {
         throw new CustomError('Error during checkout.', 500);
     }
 };
+
+export const checkoutCart = async (req: Request, res: Response) => {
+    const roleCheck = await checkUserRoleAndPermission(['Admin', 'Customer'], ['AddItem', 'CancelOrder'])(req);
+
+    const requestBody = await req.json();
+    const { deliveryAddress, isCashOnDelivery, discount = 0, deliveryCharge = 0 } = requestBody;
+
+    console.log('data===', requestBody);
+
+    if (roleCheck instanceof Response) {
+        return roleCheck;
+    }
+
+    const userId = roleCheck.user._id.toString(); // Get user ID
+
+    if (!deliveryAddress) {
+        console.log('Delivery address is missing');
+        throw new CustomError('Delivery address is missing.', 400);
+    }
+
+    // Validate required fields in deliveryAddress
+    const requiredFields = ['fullName', 'mobileNumber', 'houseNumber', 'addressLine1', 'city', 'state', 'country', 'pinCode'];
+    for (const field of requiredFields) {
+        if (!deliveryAddress[field]) {
+            console.log(`Delivery address field '${field}' is required.`);
+            throw new CustomError(`Delivery address field '${field}' is required.`, 400);
+        }
+    }
+
+    // Find the user's active cart
+    const cart = await Cart.findOne({ UserId: userId, IsActive: true });
+
+    if (!cart || cart.Items.length === 0 || cart === null) {
+        console.log('No active cart found or the cart is empty');
+        throw new CustomError('No active cart found or the cart is empty.', 400);
+    }
+
+    try {
+        // Calculate the total price
+        const ItemsPrice = cart.Items.reduce((sum, item) => sum + item.Quantity * item.PriceAtAddTime, 0);
+        const TotalPrice = (ItemsPrice - discount) + deliveryCharge;
+
+        // Generate a unique order ID
+        const orderId = uuidv4();
+
+        // Create an order object
+        const order = new Order({
+            OrderId: orderId,
+            UserId: userId,
+            Items: cart.Items, // Copy items from the cart
+            TotalPrice: TotalPrice,
+            IsPaid: isCashOnDelivery, // If COD, mark as paid
+            OrderStatus: isCashOnDelivery ? 'Confirmed' : 'Pending', // Set status accordingly
+            Discount: discount,
+            DeliveryCharge: deliveryCharge,
+            IsCashOnDelivery: isCashOnDelivery,
+            DeliveryAddress: {
+                fullName: deliveryAddress.fullName,
+                mobileNumber: deliveryAddress.mobileNumber,
+                houseNumber: deliveryAddress.houseNumber,
+                addressLine1: deliveryAddress.addressLine1,
+                addressLine2: deliveryAddress.addressLine2 || '',
+                locality: deliveryAddress.locality || '',
+                street: deliveryAddress.street || '',
+                city: deliveryAddress.city,
+                state: deliveryAddress.state,
+                country: deliveryAddress.country,
+                pinCode: deliveryAddress.pinCode.toString(),
+            },
+        });
+
+        if (!isCashOnDelivery) {
+            // Generate a Razorpay order only if it's not COD
+            const razorpayOrder = await createPayment(orderId, TotalPrice);
+
+            // Attach Razorpay details
+            order.RazorpayDetails = {
+                PaymentGatewayOrderId: razorpayOrder.id,
+                PaymentGatewayOrderAmount: razorpayOrder.amount,
+                Currency: razorpayOrder.currency,
+                PaymentStatus: 'Pending',
+            };
+        }
+
+        // Save the order in the database
+        await order.save();
+
+        // Mark the cart as inactive
+        cart.IsActive = false;
+        await cart.save();
+
+        // Return response to the client
+        return new Response(
+            JSON.stringify({
+                message: 'Checkout successful. Order created.',
+                order: {
+                    OrderId: orderId,
+                    Items: cart.Items,
+                    TotalPrice: TotalPrice,
+                    isCashOnDelivery: isCashOnDelivery,
+                    ...(isCashOnDelivery ? {} : { razorpayOrder }), // Only return Razorpay details if applicable
+                },
+                success: true,
+                statusCode: 200,
+            })
+        );
+    } catch (error) {
+        console.error(error);
+        throw new CustomError('Error during checkout.', 500);
+    }
+};
+

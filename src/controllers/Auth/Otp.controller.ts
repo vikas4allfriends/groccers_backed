@@ -125,7 +125,7 @@ export const verifyOtp = async (req: Request) => {
         };
 
         // Generate the JWT token
-        const token = jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: '24h' });
+        const token = jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: '5d' });
         // Return success response with token and user info
 
         // 5. Respond with the updated user profile

@@ -1,31 +1,48 @@
 import mongoose from 'mongoose';
 
-const PurchaseOrderSchema = new mongoose.Schema({
-    shop: {
+const PurchaseOrderSchema = new mongoose.Schema(
+  {
+    ShopId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Shop',
+      required: true,
+    },
+    ProductBatchId: [
+      {
         type: mongoose.Schema.Types.ObjectId,
-        ref: 'Shop',
-        required: true, // Link to the shop where goods were purchased
-    },
-    products: [
-        {
-            product: { type: mongoose.Schema.Types.ObjectId, ref: 'Product', required: true },
-            quantity: { type: Number, required: true },
-            price: { type: Number, required: true },
-        },
+        ref: 'ProductBatch',
+        required: true
+      }
     ],
-    totalAmount: {
-        type: Number,
-        required: true,
+    ShopName: {
+      type: String,
+      required: true,
     },
-    purchaseDate: {
-        type: Date,
-        default: Date.now,
+    ShopAddress: {
+      mobileNumber: { type: String, required: true },
+      addressLine1: { type: String, required: true },
+      addressLine2: { type: String },
+      city: { type: String, required: true },
+      state: { type: String, required: true },
+      country: { type: String, required: true },
     },
-}, {
-    timestamps: true, // Automatically add createdAt and updatedAt fields
-});
+    Items: [
+      {
+        ProductId: { type: mongoose.Schema.Types.ObjectId, ref: 'Product', required: true },
+        Quantity: { type: Number, required: true },
+        PriceAtPurchaseTime: { type: Number, required: true }, // Price at the time of purchase
+      },
+    ],
+    TotalPrice: { type: Number, required: true },
+    PurchaseDate: { type: Date, default: Date.now },
+  },
+  {
+    timestamps: true,
+  }
+);
 
-// Create or retrieve the PurchaseOrder model
-const PurchaseOrder = mongoose.models.PurchaseOrder || mongoose.model('PurchaseOrder', PurchaseOrderSchema);
+const PurchaseOrder =
+  mongoose.models.PurchaseOrder ||
+  mongoose.model('PurchaseOrder', PurchaseOrderSchema);
 
 export default PurchaseOrder;

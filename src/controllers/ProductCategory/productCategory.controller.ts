@@ -1,15 +1,15 @@
 import { checkUserRoleAndPermission } from '../../middlewares/checkUserRoleAndPermission';
 import ValidateIncomingDataWithZodSchema from '../../utils/ValidateIncomingDataWithZodSchema';
 import { CreateProductCategorySchema, UpdateProductCategorySchema } from '../../zod_schemas/productCategorySchema';
-import ProductCategory from '../../models/productCategory.models';
+import ProductCategory from '../../models/ProductCategory';
 import { CustomError } from '../../utils/error';
 import { type NextRequest } from 'next/server'
 import mongoose from 'mongoose';
 
 export const createProductCategory = async (req: Request) => {
-    const roleCheck = await checkUserRoleAndPermission(['Admin', 'Customer'], ['AddItem', 'CancelOrder'])(req);
-    const { name, CategoryImageUrl } = await req.json();
-    const data = { name, CategoryImageUrl };
+    const roleCheck = await checkUserRoleAndPermission(['Admin', 'Customer'], ['AddItem', 'CancelOrder','Admin'])(req);
+    const { Name, Description, CategoryImageUrl } = await req.json();
+    const data = { Name, CategoryImageUrl, Description };
 
     // console.log('user===', roleCheck)
     // If the middleware returns a Response object (e.g., error), return it immediately
@@ -21,7 +21,8 @@ export const createProductCategory = async (req: Request) => {
 
     try {
         const newProductCategory = new ProductCategory({
-            name,
+            Name,
+            Description,
             CategoryImageUrl
         })
 
@@ -41,7 +42,7 @@ export const createProductCategory = async (req: Request) => {
 }
 
 export const GetCategories = async (req: Request) => {
-    const roleCheck = await checkUserRoleAndPermission(['Admin', 'Customer'], ['AddItem', 'CancelOrder'])(req);
+    const roleCheck = await checkUserRoleAndPermission(['Admin', 'Customer'], ['AddItem', 'CancelOrder','Admin'])(req);
     // If the middleware returns a Response object (e.g., error), return it immediately
     if (roleCheck instanceof Response) {
         return roleCheck;
@@ -53,13 +54,13 @@ export const GetCategories = async (req: Request) => {
                 $match: {IsActive:true}
             },
             {
-                $sort: { name: 1 } // Sort in ascending order by 'name'
+                $sort: { Name: 1 } // Sort in ascending order by 'name'
             },
             {
                 $facet: {
                     data: [ // Retrieve sorted data
                         { $match: {} }, // Match all documents
-                        { $project: { _id: 1, name: 1 } } // Project only _id and name fields
+                        { $project: { _id: 1, Name: 1 } } // Project only _id and name fields
                     ],
                     totalRecords: [ // Retrieve total record count
                         { $count: 'total' }
@@ -85,7 +86,7 @@ export const GetCategories = async (req: Request) => {
 }
 
 export const GetCategoryById = async (req: NextRequest) => {
-    const roleCheck = await checkUserRoleAndPermission(['Admin', 'Customer'], ['AddItem', 'CancelOrder'])(req);
+    const roleCheck = await checkUserRoleAndPermission(['Admin', 'Customer'], ['AddItem', 'CancelOrder','Admin'])(req);
     // If the middleware returns a Response object (e.g., error), return it immediately
     if (roleCheck instanceof Response) {
         return roleCheck;
@@ -100,7 +101,7 @@ export const GetCategoryById = async (req: NextRequest) => {
             {
                 $project: {
                     _id: 1,
-                    name: 1,
+                    Name: 1,
                 }
             }
         ]);
@@ -116,15 +117,15 @@ export const GetCategoryById = async (req: NextRequest) => {
 }
 
 export const updateProductCategory = async (req: NextRequest) => {
-    const roleCheck = await checkUserRoleAndPermission(['Admin', 'Customer'], ['AddItem', 'CancelOrder'])(req);
+    const roleCheck = await checkUserRoleAndPermission(['Admin', 'Customer'], ['AddItem', 'CancelOrder','Admin'])(req);
     if (roleCheck instanceof Response) {
         return roleCheck;
     }
-    const { name, CategoryImageUrl, categoryId } = await req.json();
+    const { Name, CategoryImageUrl, categoryId } = await req.json();
     // const searchParams = req.nextUrl.searchParams
     // const categoryId = searchParams.get('categoryId')
     console.log("userId=== =", roleCheck.user._id, typeof(roleCheck.user._id))
-    const updateData = { name, CategoryImageUrl, IsDeleted: false, IsActive: true }
+    const updateData = { Name, CategoryImageUrl, IsDeleted: false, IsActive: true }
     await ValidateIncomingDataWithZodSchema(UpdateProductCategorySchema, {...updateData, categoryId, LastUpdatedById:roleCheck.user._id})
 
     try {

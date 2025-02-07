@@ -3,7 +3,8 @@ import mongoose, { Schema, Document } from 'mongoose';
 // Define the interface for a Permission document
 export interface IProductCategory extends Document {
     _id: mongoose.Schema.Types.ObjectId;  // Explicitly define _id field
-    name: string;  // Name of the permission
+    Name: string;  // Name of the permission
+    Description: string;
     CategoryImageUrl?: string;  // Optional description of the permission
     IsDeleted:boolean;
     IsActive:boolean;
@@ -12,10 +13,15 @@ export interface IProductCategory extends Document {
 
 // Define the Permission schema
 const ProductCategorySchema: Schema<IProductCategory> = new mongoose.Schema({
-    name: {
+    Name: {
         type: String,
         required: true,
         unique: true,  // Ensure that each category name is unique
+    },
+    Description: {
+        type: String,
+        required: true,
+        unique: true,
     },
     CategoryImageUrl: {
         type: String,

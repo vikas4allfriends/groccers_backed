@@ -54,6 +54,7 @@ const UserSchema: Schema<IUser> = new Schema({
         type: String,
         unique: true,
         index: true,
+        sparse: true,  // Allows multiple `null` values
         default: null
     },
     mobileNumberConfirmed: {

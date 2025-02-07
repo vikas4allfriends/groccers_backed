@@ -1,6 +1,6 @@
 import crypto from 'crypto';
 import Order from '../../models/order.models';
-import Product from '../../models/product.models'; // Assuming your Product model is imported here
+import Product from '../../models/product_old.models'; // Assuming your Product model is imported here
 import { CustomError } from '../../utils/error';
 
 export const config = {

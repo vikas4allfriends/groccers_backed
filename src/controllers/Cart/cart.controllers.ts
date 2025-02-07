@@ -2,7 +2,7 @@ import { checkUserRoleAndPermission } from '../../middlewares/checkUserRoleAndPe
 import { CustomError } from '../../utils/error';
 import { type NextRequest } from 'next/server'
 import mongoose from 'mongoose';
-import Product from '../../models/product.models';
+import Product from '../../models/product_old.models';
 import Cart from '../../models/cart.models';
 import dbConnect from '../../lib/dbConnect';
 
