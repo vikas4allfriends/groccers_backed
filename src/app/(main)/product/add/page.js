@@ -24,12 +24,13 @@ import KeyboardBackspaceIcon from "@mui/icons-material/KeyboardBackspace";
 import Visibility from "@mui/icons-material/Visibility";
 import VisibilityOff from "@mui/icons-material/VisibilityOff";
 import { green } from "@mui/material/colors";
-import { Add_Product } from '../../../services/page/Product';
-import AddProductCss from "../../../css/AddProductCss";
+import { Add_Product } from '../../../../services/page/Product';
+import AddProductCss from "../../../../css/AddProductCss";
 import { useSelector } from 'react-redux';
-import { Set_Notification } from '../../../services/page/common';
-import { Get_Measurment_Unit } from '../../../services/page/MeasurmentUnit';
-import { Get_Product_Category } from '../../../services/page/ProductCategory';
+import { Set_Notification } from '../../../../services/page/common';
+import { Get_Measurment_Unit } from '../../../../services/page/MeasurmentUnit';
+import { Get_Product_Category } from '../../../../services/page/ProductCategory';
+import { Get_Product_Company } from '../../../../services/page/ProductCompany';
 
 // validationSchema
 const validationSchema = Yup.object().shape({
@@ -37,6 +38,7 @@ const validationSchema = Yup.object().shape({
   Name: Yup.string().required("Product Name is required"),
   Price: Yup.number().min(0, "Price must be positive").required("Price is required"),
   MeasuringUnitId: Yup.string().required("Measuring Unit is required"),
+  ProductCompanyId: Yup.string().required("Product Company is required"),
   Description: Yup.string().nullable(),
   ProductImageUrl: Yup.mixed().nullable(),
   Tags: Yup.array()
@@ -85,6 +87,7 @@ const AddProduct = ({ drawerWidth }) => {
 
   const initialValues = {
     ProductCategoryId: '',
+    ProductCompanyId: '',
     Name: '',
     Price: 0,
     Tags: [],
@@ -101,7 +104,8 @@ const AddProduct = ({ drawerWidth }) => {
 
   useEffect(() => {
     Get_Measurment_Unit(),
-      Get_Product_Category()
+    Get_Product_Category()
+    Get_Product_Company()
   }, [])
 
   const onSubmit = async (values, { setSubmitting, resetForm }) => {
@@ -321,6 +325,14 @@ const AddProduct = ({ drawerWidth }) => {
                           "Select Product Category",
                           "text",
                           Product_Data.productCategories
+                        )}
+                      </Grid>
+                      <Grid item xs={10}>
+                        {renderTextField(
+                          "ProductCompanyId",
+                          "Select Product Company",
+                          "text",
+                          Product_Data.productCompanies
                         )}
                       </Grid>
                       <Grid item xs={10}>

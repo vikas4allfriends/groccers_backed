@@ -24,89 +24,57 @@ import KeyboardBackspaceIcon from "@mui/icons-material/KeyboardBackspace";
 import Visibility from "@mui/icons-material/Visibility";
 import VisibilityOff from "@mui/icons-material/VisibilityOff";
 import { green } from "@mui/material/colors";
-import {Set_Notification} from '../../../../services/page/common';
-import AddProductCss from "../../../../css/AddProductCss";
 import {useSelector} from 'react-redux';
-import {Add_Shop} from '../../../../services/page/Shop';
+import AddProductCss from "../../../../css/AddProductCss";
+import {Set_Notification} from '../../../../services/page/common';
+import {Add_Product_Company} from '../../../../services/page/ProductCompany';
+import {renderTextFieldSmall} from '../../../../components/TextField';
 
 // validationSchema
 const validationSchema = Yup.object().shape({
-  ShopName: Yup.string().required("Shop name is required"),
-  addressLine1: Yup.string().optional(),
-  city: Yup.string().optional(),
-  state: Yup.string().optional(),
-  country: Yup.string().optional(),
-  mobileNumber: Yup.string()
-    .matches(
-      /^[\+]?[(]?[0-9]{3}[)]?[-\s\.]?[0-9]{3}[-\s\.]?[0-9]{4,6}$/,
-      "Invalid phone number format"
-    )
-    .required("Primary contact phone is required")
+  Name: Yup.string().required('Name is required field'),
+  Description: Yup.string().optional().nullable()
 });
 
-const AddShop = ({ drawerWidth }) => {
+const AddProductCompany = ({ drawerWidth }) => {
   const theme = useTheme();
   const styles = AddProductCss(theme);
   const router = useRouter();
 
   //all the state and handler functions
-  const [showPassword, setShowPassword] = React.useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = React.useState(false);
-  const notification = useSelector((store)=>store.Common_Data.notification);
-  const handleClickShowPassword = () => setShowPassword((show) => !show);
-  const handleClickShowConfirmPassword = () =>
-    setShowConfirmPassword((show) => !show);
-
-  const handleMouseDownPassword = (event) => {
-    event.preventDefault();
-  };
+  const notification = useSelector((store)=> store.Common_Data.notification)
 
   const handleCloseNotification = (event, reason) => {
     if (reason === "clickaway") {
       return;
     }
-    Set_Notification({
-      open:false,
+    Set_Notification({ 
+      open: false,
       message:'',
-      severity:''
-    })
+      severity:'' 
+    });
   };
 
   const handleBackClick = () => {
-    router.push("/shop/dashboard");
+    router.push("/ProductCompany/Add");
   };
 
   const handleCancelClick = () => {
-    router.push("/shop/dashboard");
+    router.push("/ProductCompany/Add");
   };
 
   const initialValues = {
-    ShopName: "",
-    addressLine1: "",
-    addressLine2:"",
-    city: "",
-    state: "",
-    country: "",
-    mobileNumber: "",
+    Name:'', 
+    Description:null,
   };
 
-  const onSubmit = async (values, { setSubmitting, resetForm }) => {
-    console.log('subit exec')
-    Add_Shop(
-      {
-        name: values.ShopName,
-        address: {
-          mobileNumber: values.mobileNumber,
-          addressLine1: values.addressLine1,
-          addressLine2: values.addressLine2,
-          city: values.city,
-          state: values.state,
-          country: values.country,
-        },
-      },
-      resetForm)
-  }
 
+  const onSubmit = async (values, { setSubmitting, resetForm }) => {
+  
+      // Log form values before sending
+      console.log("Form values being sent: ", values);
+      Add_Product_Company(values,resetForm)
+  }
   const renderTextField = (
     name,
     label,
@@ -230,7 +198,7 @@ const AddShop = ({ drawerWidth }) => {
                   <KeyboardBackspaceIcon />
                 </Button>
                 {/* topHeading */}
-                <Typography sx={styles.topHeading}>Add Shop</Typography>
+                <Typography sx={styles.topHeading}>Add Product Company</Typography>
               </Box>
 
               {/* ButtonBox */}
@@ -238,7 +206,7 @@ const AddShop = ({ drawerWidth }) => {
                 {/* actionBox */}
                 <Button
                   variant="outlined"
-                  // disabled={isSubmitting}
+                  disabled={isSubmitting}
                   type="submit"
                   sx={styles.actionButton}
                 >
@@ -291,60 +259,25 @@ const AddShop = ({ drawerWidth }) => {
                       gutterBottom
                       sx={styles.title}
                     >
-                      Shop Information
+                      Product Category Information
                     </Typography>
                     <Grid container spacing={2}>
                       <Grid item xs={10}>
-                        {renderTextField(
-                          "ShopName",
-                          "Shop Name"
+                        {renderTextFieldSmall(
+                          "Name",
+                          "Company Name"
                         )}
                       </Grid>
-                    </Grid>
-
-                    <Typography
-                      variant="subtitle1"
-                      gutterBottom
-                      sx={styles.subTitle}
-                    >
-                      Address
-                    </Typography>
-                    <Grid container spacing={2}>
                       <Grid item xs={10}>
-                        {renderTextField("addressLine1", "Address Line 1")}
-                      </Grid>
-                      <Grid item xs={10}>
-                        {renderTextField("addressLine2", "Address Line 2")}
-                      </Grid>
-                      <Grid item xs={10}>
-                        {renderTextField("city", "City")}
-                      </Grid>
-                      <Grid item xs={10}>
-                        {renderTextField("state", "State")}
-                      </Grid>
-                      <Grid item xs={10}>
-                        {renderTextField("country", "Country")}
-                      </Grid>
-                    </Grid>
-
-                    <Typography
-                      variant="subtitle1"
-                      gutterBottom
-                      sx={styles.subTitle}
-                    >
-                      Contact Information
-                    </Typography>
-                    <Grid container spacing={2}>                      
-                      <Grid item xs={10}>
-                        {renderTextField(
-                          "mobileNumber",
-                          "Primary Contact Mobile Number"
+                        {renderTextFieldSmall(
+                          "Description",
+                          "Description"
                         )}
-                      </Grid>                      
-                    </Grid>
+                      </Grid>
+                    </Grid>                                                      
                   </CardContent>
                 </Card>
-              </Grid>
+              </Grid>                       
             </Grid>
           </Form>
         )}
@@ -353,4 +286,4 @@ const AddShop = ({ drawerWidth }) => {
   );
 };
 
-export default AddShop;
+export default AddProductCompany;

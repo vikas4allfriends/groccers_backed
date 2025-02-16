@@ -2,7 +2,6 @@ import localFont from "next/font/local";
 import "./globals.css";
 import Providers from "../redux/provider";
 import LogoutHandler from '../components/LogoutHandler';
-
 const geistSans = localFont({
   src: "./fonts/GeistVF.woff",
   variable: "--font-geist-sans",
@@ -23,8 +22,7 @@ export default function RootLayout({ children }) {
   console.log('RootLayout render')
   return (
     <html lang="en">
-      <body className={`${geistSans.variable} ${geistMono.variable}`}>
-        
+      <body className={`${geistSans.variable} ${geistMono.variable}`}>        
         <Providers>{children}</Providers>
       </body>
     </html>

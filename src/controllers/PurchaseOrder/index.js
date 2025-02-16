@@ -384,8 +384,8 @@ export const AddPurchaseOrder = async (req) => {
     const BatchesId = []
     // Update product quantities, calculate average buying price, and calculate total amount
     const purchaseOrderProducts = await Promise.all(
-      products.map(async ({ productId, quantity, price, expiryDate }) => {
-        console.log('expiryDate--',expiryDate)
+      products.map(async ({ productId, quantity, price, expiryDate, PricePerUnit }) => {
+        console.log('PricePerUnit--',PricePerUnit)
         const product = await Product.findById(productId);
         if (!product) {
           return new Response(JSON.stringify({ success: false, error: `Product with ID ${productId} not found` }), { status: 404 });
@@ -408,7 +408,7 @@ export const AddPurchaseOrder = async (req) => {
           ProductId: productId,
           ExpiryDate: expiryDate?expiryDate:null,
           Quantity: Number(quantity),
-          BuyingPrice: Number(price),
+          BuyingPrice: Number(PricePerUnit),
         });
 
         
@@ -420,12 +420,12 @@ export const AddPurchaseOrder = async (req) => {
         const ProductBatchRes = await newBatch.save();
         BatchesId.push(ProductBatchRes._id)
         // Calculate total price for purchase order
-        TotalPrice += quantity * price;
+        TotalPrice += quantity * PricePerUnit;
 
         return {
           ProductId: productId,
           Quantity: quantity,
-          PriceAtPurchaseTime: price,
+          PriceAtPurchaseTime: PricePerUnit,
           BatchesId
         };
       })

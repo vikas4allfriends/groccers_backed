@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { Typography, InputBase, Box, useTheme } from "@mui/material";
 import SearchCss from "../../css/SearchCss";
 
-const SearchBox = () => {
+const SearchBox = ({placeholder}) => {
   const [query, setQuery] = useState("");
   const theme = useTheme();
   const styles = SearchCss(theme);
@@ -24,7 +24,7 @@ const SearchBox = () => {
       </Typography>
       <Box sx={styles.searchBox}>
         <InputBase
-          placeholder="EimpleLab"
+          placeholder={placeholder||"Paansari"}
           inputProps={{ "aria-label": "search organisations" }}
           sx={styles.searchInput}
           value={query}

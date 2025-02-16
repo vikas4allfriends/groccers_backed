@@ -25,19 +25,18 @@ import Visibility from "@mui/icons-material/Visibility";
 import VisibilityOff from "@mui/icons-material/VisibilityOff";
 import { green } from "@mui/material/colors";
 import {useSelector} from 'react-redux';
-import axios from "axios";
-import AddProductCss from "../../../css/AddProductCss";
-import {Set_Notification} from '../../../services/page/common';
-import {Add_Product_Category} from '../../../services/page/ProductCategory';
+import AddProductCss from "../../../../css/AddProductCss";
+import {Set_Notification} from '../../../../services/page/common';
+import {Add_Product_Category} from '../../../../services/page/ProductCategory';
+import {renderTextFieldSmall} from '../../../../components/TextField';
 
 // validationSchema
 const validationSchema = Yup.object().shape({
   Name: Yup.string().required('Name is required field'),
-  Description: Yup.string().optional()
-  // CategoryImageUrl:Yup.string().nullable();
+  Description: Yup.string().optional().nullable()
 });
 
-const AddProductCategory = ({ drawerWidth }) => {
+const AddProductCompany = ({ drawerWidth }) => {
   const theme = useTheme();
   const styles = AddProductCss(theme);
   const router = useRouter();
@@ -66,61 +65,9 @@ const AddProductCategory = ({ drawerWidth }) => {
 
   const initialValues = {
     Name:'', 
-    Description:'',
-    CategoryImageUrl:''
+    Description:null,
   };
 
-  // for file upload
-  const handleFileChange = (setFieldValue) => (event) => {
-    const file = event.currentTarget.files[0];
-    setFieldValue("CategoryImageUrl", file);
-  };
-
-  const onSubmit1 = async (values, { setSubmitting, resetForm }) => {
-    try {
-      setSubmitting(true);
-
-      // Log form values before sending
-      console.log("Form values being sent: ", values);
-
-      // Send data to the backend using POST request
-      const response = await axios.post(
-        "http://localhost:5000/api/organizationData/",
-        values
-      );
-
-      console.log("Server response:", response.data);
-
-      // Check if the response indicates success
-      if (response.data && response.data.success) {
-        setNotification({
-          open: true,
-          message: "Organisation data submitted successfully!",
-          severity: "success",
-        });
-        resetForm();
-      } else {
-        throw new Error(response.data.message || "Unexpected server response");
-      }
-    } catch (error) {
-      // Detailed error logging
-      console.error("Error response details:", error.response);
-      console.error("Status:", error.response?.status);
-      console.error("Data:", error.response?.data);
-
-      setNotification({
-        open: true,
-        message: `Error: ${
-          error.response?.data?.message ||
-          error.message ||
-          "Unknown error occurred"
-        }`,
-        severity: "error",
-      });
-    } finally {
-      setSubmitting(false);
-    }
-  };
 
   const onSubmit = async (values, { setSubmitting, resetForm }) => {
   
@@ -316,72 +263,21 @@ const AddProductCategory = ({ drawerWidth }) => {
                     </Typography>
                     <Grid container spacing={2}>
                       <Grid item xs={10}>
-                        {renderTextField(
+                        {renderTextFieldSmall(
                           "Name",
-                          "Category Name"
+                          "Company Name"
                         )}
                       </Grid>
                       <Grid item xs={10}>
-                        <Field name="Description">
-                          {({ field, meta }) => (
-                            <TextField
-                              {...field}
-                              label="Description"
-                              size="small"
-                              fullWidth
-                              multiline
-                              rows={3}
-                              error={meta.touched && !!meta.error}
-                              helperText={meta.touched && meta.error}
-                            />
-                          )}
-                        </Field>
+                        {renderTextFieldSmall(
+                          "Description",
+                          "Description"
+                        )}
                       </Grid>
                     </Grid>                                                      
                   </CardContent>
                 </Card>
-              </Grid>  
-              {/* form content right side */}
-              <Grid item xs={12} sm={6} sx={styles.subGrid}>
-                <Card sx={styles.card}>
-                  <CardContent>
-                    <Typography
-                      variant="subtitle1"
-                      gutterBottom
-                      sx={styles.subTitle}
-                    >
-                      Optional Fields
-                    </Typography>
-                    <Grid container spacing={2}>
-                      <Grid item xs={10}>
-                        <Field name="logo">
-                          {({ field, form: { setFieldValue }, meta }) => (
-                            <TextField
-                              {...field}
-                              fullWidth
-                              label="Product Image"
-                              type="file"
-                              InputLabelProps={{
-                                shrink: true,
-                                style: {
-                                  fontSize: "14px",
-                                  fontFamily: "Poppins",
-                                  fontWeight: "400",
-                                  color: "#3D3D4E",
-                                },
-                              }}
-                              onChange={handleFileChange(setFieldValue)}
-                              error={meta.touched && !!meta.error}
-                              helperText={meta.touched && meta.error}
-                              sx={styles.StyledTextField}
-                            />
-                          )}
-                        </Field>
-                      </Grid>
-                    </Grid>
-                  </CardContent>
-                </Card>
-              </Grid>            
+              </Grid>                       
             </Grid>
           </Form>
         )}
@@ -390,4 +286,4 @@ const AddProductCategory = ({ drawerWidth }) => {
   );
 };
 
-export default AddProductCategory;
+export default AddProductCompany;

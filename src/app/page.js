@@ -1,11 +1,7 @@
 "use client"; // ✅ Required for useSelector
 
-import SidebarLayout from "./SidebarLayout";
-import { useSelector } from "react-redux";
-import LogoutHandler from "../components/LogoutHandler";
 import {useEffect, useState} from 'react';
 import {useDispatch} from 'react-redux';
-import {LOGIN_SUCESS} from '../constants';
 import {useRouter} from 'next/navigation';
 import {setRouter} from '../utils/navigation';
 
@@ -23,16 +19,13 @@ export default function Home() {
 
   useEffect(() => {
     const token = localStorage.getItem('token');
-    console.log('token>>>>',token)
+    console.log('root page token>>>>',token)
     setToken(token)
     if(!token){
       window.location.replace("/auth/Login");
     }else{
       window.location.replace('/product/dashboard')
     }
-    // if(token){
-    //   dispatch({type:LOGIN_SUCESS, payload:{token:token}})
-    // }
   }, [])
   
 

@@ -33,19 +33,15 @@ import { renderTextFieldSmall } from '../../../../components/TextField';
 import withAuth from '../../../../hoc/withAuth';
 import { useRouter } from "next/navigation";
 
-const AddPurchaseItems = () => {
+const SalesOrder = () => {
   const shopRef = useRef(null);
   const productRef = useRef(null);
   const router = useRouter();
   const [items, setItems] = useState([{ productId: '', quantity: '', price: '', productName: '', expiryDate: null }]);
-  const [shopSearch, setShopSearch] = useState('');
-  const [PurchaseDate, setPurchaseDate] = useState(null)
   const [shopId, setShopId] = useState('');
   const [productSuggestions, setProductSuggestions] = useState({});
   const [shopSuggestions, setShopSuggestions] = useState([]);
   const { enqueueSnackbar } = useSnackbar();
-  const [expiryDate, setExpiryDate] = useState(null);
-  // const productList = useSelector((store)=>store.Product_Data.productList)
 
   // validationSchema
   const validationSchema = Yup.object().shape({
@@ -85,6 +81,7 @@ const AddPurchaseItems = () => {
 
   const initialValues = {
     items: [{
+      customerName:'',
       productId: '',
       quantity: '',
       price: '',
@@ -94,7 +91,9 @@ const AddPurchaseItems = () => {
       MUQ: 0,
       PricePerUnit: 0,
       PricePerMeasuringUnit: 0,
-      TotalPrice: 0
+      TotalPrice: 0,
+      SalesDate:null,
+      TotalStockQuantity:null
     }],
     PurchaseDate: null,
     shopId: '',
@@ -102,7 +101,7 @@ const AddPurchaseItems = () => {
   };
 
   // Debounced shop search
-  const handleShopSearchDebounced = useCallback(
+  const handleCustomerSearchDebounced = useCallback(
     debounce(async (query) => {
       if (query.length > 2) {
         try {
@@ -120,10 +119,9 @@ const AddPurchaseItems = () => {
     []
   );
 
-  const handleShopSearch = (query, values, setFieldValue) => {
-    // setShopSearch(query);
-    setFieldValue('shopSearch', query)
-    handleShopSearchDebounced(query);
+  const handleCustomerSearch = (query, values, setFieldValue) => {
+    setFieldValue('handleCustomerSearch', query)
+    handleCustomerSearchDebounced(query);
   };
 
   // Debounced product search
@@ -159,6 +157,7 @@ const AddPurchaseItems = () => {
   // Handle shop selection
   const handleShopSelect = (shop, setFieldValue, shopId) => {
     // setShopSearch(shop.name);
+    // console.log('handleShopSelect==', shop)
     setShopId(shop._id);
     setFieldValue('shopId',shop._id)
     setFieldValue('shopSearch',shop.name)
@@ -167,12 +166,14 @@ const AddPurchaseItems = () => {
 
   // Handle product selection
   const handleProductSelect = (product, index, values, setFieldValue) => {
-    console.log('product>>>>', product)
+    console.log('handleProductSelect-->>>>', product)
     const updatedItems = [...values.items];
     updatedItems[index].productId = product._id;
     updatedItems[index].productName = product.Name;
     updatedItems[index].MeasuringUnit = product.MeasuringUnit.Name;
     updatedItems[index].MultiplyingQty = product.MeasuringUnit.Description;
+    updatedItems[index].PricePerUnit = product.Price;
+    updatedItems[index].TotalStockQuantity = product.TotalStockQuantity;
     // setItems(updatedItems);
     setFieldValue({...values, items:updatedItems})
     setProductSuggestions((prev) => ({
@@ -199,7 +200,6 @@ const AddPurchaseItems = () => {
       // Ensure the array updates correctly
       setFieldValue('items', [...values.items, newItem]);
     }; 
-  
 
   // Remove a row
   const handleRemoveItem = (index, values, setFieldValue) => {
@@ -332,19 +332,22 @@ const AddPurchaseItems = () => {
     >
       {({ isSubmitting, values, setValues, setFieldValue, resetForm }) => (
         <Form>
-          <Container maxWidth="lg" style={{ padding: '10px' }}>
+          <Box style={{ padding: '10px' }}>
 
-            <Grid
+            <Box
               container
               // justifyContent="flex-end"
               // spacing={2}
-              style={{ marginTop: '0px', position: 'sticky', bottom: 0, background: '#fff', zIndex: 2 }}
+              fullWidth
+              // style={{marginY:'5px'}}
+              // style={{ marginTop: '0px', position: 'sticky', bottom: 0, background: '#ccc', zIndex: 2, justifyContent:'space-between', display:'flex' }}
             >
-              <Grid style={{ flexDirection: 'row', display: 'flex', gap: 5 }}>
-                <Typography variant="h4" gutterBottom>
-                  Add Purchase Items
+              <Box sx={{ flexDirection: 'row', display: 'flex', gap: 15, justifyContent:'space-between',
+                 alignItems:'center'}}>
+                <Typography variant="h4" >
+                  Add Sales Items
                 </Typography>
-                <Grid style={{ display: 'flex', flexDirection: 'row', gap: 2 }}>
+                <Box style={{ display: 'flex', flexDirection: 'row', gap: 2 }}>
                   <Grid item>
                     <Button onClick={() => navigation('/product/add')} variant="contained" color="primary">
                       ADD PRODUCT
@@ -365,19 +368,19 @@ const AddPurchaseItems = () => {
                       ADD SHOP
                     </Button>
                   </Grid>
-                </Grid>
-              </Grid>
-            </Grid>
+                </Box>
+              </Box>
+            </Box>
 
             {/* Shop Selection */}
-            <Grid container spacing={2} alignItems="center" sx={{display:'flex', flexDirection:'row'}}>
+            <Grid container spacing={2} alignItems="center" sx={{display:'flex', flexDirection:'row', marginTop:'15px'}}>
               <Grid item xs={6} ref={shopRef}>
                 <TextField
-                  label="Search Shop"
+                  label="Search Customer"
                   fullWidth
                   size='small'
-                  value={values.shopSearch}
-                  onChange={(e) => handleShopSearch(e.target.value, values, setFieldValue)}
+                  value={values.customerName}
+                  onChange={(e) => handleCustomerSearch(e.target.value, values, setFieldValue)}
                   helperText="Start typing to search for shops"
                 />
                 {/* {renderTextFieldSmall("shopSearch", "Search Shop", 'text', null, false, null, (e) => handleShopSearch(e.target.value))} */}
@@ -397,12 +400,12 @@ const AddPurchaseItems = () => {
               <Grid item size='small' style={{height:'35px'}} >                
                 <LocalizationProvider size='small' dateAdapter={AdapterDayjs}>
                   <DatePicker
-                    label="Purchase Date"
-                    value={values.PurchaseDate}
+                    label="Sales Date"
+                    value={values.SalesDate}
                     size='small'
                     style={{height:'35px'}}
                     onChange={(date) => {
-                      setValues({...values, PurchaseDate:date})
+                      setValues({...values, SalesDate:date})
                       console.log('date---', date.toISOString())
                     }}
                     renderInput={(params) => 
@@ -423,12 +426,12 @@ const AddPurchaseItems = () => {
                 <TableRow>
                   <TableCell>Product</TableCell>
                   <TableCell>Measuring Unit</TableCell>
-                  <TableCell>MUQ</TableCell>
+                  <TableCell>Total Stock Quantity</TableCell>
                   <TableCell>Qty. In Units</TableCell>
                   <TableCell>Price/Unit</TableCell>
                   <TableCell>Price/MeasuringUnit</TableCell>
                   <TableCell>Total Price</TableCell>
-                  <TableCell>Expiry Date</TableCell>
+                  {/* <TableCell>Expiry Date</TableCell> */}
                   <TableCell>Actions</TableCell>
                 </TableRow>
               </TableHead>
@@ -473,8 +476,8 @@ const AddPurchaseItems = () => {
 
                     <TableCell>
                       <TextField
-                        value={item.MUQ}
-                        onChange={(e) => handleMUQChange(e.target.value, index, values, setFieldValue)}
+                        value={item.TotalStockQuantity}
+                        // onChange={(e) => handleMUQChange(e.target.value, index, values, setFieldValue)}
                         // label="MUQ"
                         fullWidth
                       />
@@ -532,7 +535,7 @@ const AddPurchaseItems = () => {
                         fullWidth
                       />
                     </TableCell>
-                    <TableCell>
+                    {/* <TableCell>
                       <LocalizationProvider dateAdapter={AdapterDayjs}>
                         <DatePicker
                           label="Expiry Date"
@@ -541,7 +544,7 @@ const AddPurchaseItems = () => {
                           renderInput={(params) => <TextField {...params} fullWidth />}
                         />
                       </LocalizationProvider>
-                    </TableCell>
+                    </TableCell> */}
                     <TableCell>
                       <Button onClick={() => handleRemoveItem(index, values, setFieldValue)} color="secondary">
                         Remove
@@ -570,11 +573,11 @@ const AddPurchaseItems = () => {
                 </Button>
               </Grid>
             </Grid>
-          </Container>
+          </Box>
         </Form>
       )}
     </Formik>
   );
 };
 
-export default withAuth(AddPurchaseItems);
+export default withAuth(SalesOrder);

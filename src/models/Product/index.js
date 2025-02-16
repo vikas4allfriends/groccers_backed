@@ -7,6 +7,11 @@ const ProductSchema = new mongoose.Schema({
     ref: 'ProductCategory', // Reference to the ProductCategory schema
     required: true,
   },
+  ProductCompanyId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'ProductCompany', // Reference to the ProductCategory schema
+    required: true,
+  },
   ProductImageUrl: {
     type: String,
     required: true,
@@ -22,6 +27,7 @@ const ProductSchema = new mongoose.Schema({
   },
   MeasuringUnitId: {
     type: mongoose.Schema.Types.ObjectId,
+    ref:'MeasuringUnit',
     required: true, // Assuming you have a MeasuringUnit collection
   },
   Price: {

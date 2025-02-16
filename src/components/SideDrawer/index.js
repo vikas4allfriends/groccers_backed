@@ -65,8 +65,9 @@ function SideDrawer({ mobileOpen, handleDrawerToggle }) {
         { text: "DASHBOARD", path: "/" },
         { text: "SHOP", path: "/shop/dashboard" },
         { text: "PURCHASE ORDER", path: "/purchaseOrder/dashboard" },
-        { text: "SALES ORDER", path: "/salesOrder" },
+        { text: "SALES ORDER", path: "/salesOrder/add" },
         { text: "PRODUCT MANAGEMENT", path: "/product/dashboard" },
+        { text: "PRODUCT COMPANY", path: "/ProductCompany/Dashboard" },
         { text: "PRODUCT CATEGORY", path: "/productCategory/dashboard" },
         { text: "MEASURMENT UNIT", path: "/MeasuringUnit/dashboard" },
     ];

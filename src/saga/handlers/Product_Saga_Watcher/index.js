@@ -19,7 +19,11 @@ import {
     ADD_PRODUCT_CATEGORY_SUCESS,
     ADD_PRODUCT_CATEGORY_REQUESTED,
     ADD_SHOP_REQUESTED,
-    ADD_SHOP_SUCESS
+    ADD_SHOP_SUCESS,
+    ADD_PRODUCT_COMPANY_REQUESTED,
+    ADD_PRODUCT_COMPANY_SUCESS,
+    GET_PRODUCT_COMPANY_SUCESS,
+    GET_PRODUCT_COMPANY_REQUESTED
 } from '../../../constants';
 
 function* handle_Get_MeasurmentUnit(values) {
@@ -77,6 +81,35 @@ function* handle_Add_Product_Category(values) {
                 severity: "success",
             }
         })
+    } catch (error) {
+        console.log('handle_Get_Cart Saga Watcher ====>>>>>>', error)
+    }
+}
+
+function* handle_Add_Product_Company(values) {
+    try {
+        console.log('handle_Product_Company saga===', values.payload)
+        const data = yield call(post, values)
+        yield put({ type: ADD_PRODUCT_COMPANY_SUCESS, payload: data })
+        values.payload.resetForm()
+        yield put({
+            type: SET_NOTIFICATION, 
+            payload: {
+                open: true,
+                message: "Product company data submitted successfully!",
+                severity: "success",
+            }
+        })
+    } catch (error) {
+        console.log('handle_Get_Cart Saga Watcher ====>>>>>>', error)
+    }
+}
+
+function* handle_Get_Product_Company(values) {
+    try {
+        console.log('handle_Get_Product_Company saga===', values.payload)
+        const data = yield call(get, values)
+        yield put({ type: GET_PRODUCT_COMPANY_SUCESS, payload: data })        
     } catch (error) {
         console.log('handle_Get_Cart Saga Watcher ====>>>>>>', error)
     }
@@ -158,12 +191,19 @@ function* handle_Get_PurchaseOrder(values) {
 function* Product_Saga_Watcher() {
     yield takeEvery(GET_MEASURMENT_REQUESTED, handle_Get_MeasurmentUnit)
     yield takeEvery(ADD_MEASURMENT_REQUESTED, handle_Add_MeasurmentUnit)
+
+    yield takeEvery(ADD_PRODUCT_COMPANY_REQUESTED, handle_Add_Product_Company)
+    yield takeEvery(GET_PRODUCT_COMPANY_REQUESTED, handle_Get_Product_Company)
+
     yield takeEvery(GET_PRODUCT_CATEGORY_REQUESTED, handle_Product_Categories)
     yield takeEvery(ADD_PRODUCT_CATEGORY_REQUESTED, handle_Add_Product_Category)
+
     yield takeEvery(GET_PRODUCTS_REQUESTED, handle_Get_Products)
     yield takeEvery(ADD_PRODUCT_REQUESTED, handle_Add_Product)
+
     yield takeEvery(GET_SHOPS_REQUESTED, handle_Get_Shop)
     yield takeEvery(ADD_SHOP_REQUESTED, handle_Add_Shop)
+
     yield takeEvery(GET_PURCHASE_ORDER_REQUESTED, handle_Get_PurchaseOrder)
 }
 

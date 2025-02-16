@@ -15,16 +15,17 @@ export const createProduct = async (req) => {
     return roleCheck;
   }
 
-  const { ProductCategoryId, Name, Price, Tags, MeasuringUnitId, Description, ProductImageUrl } = await req.json();
+  const { ProductCategoryId, Name, Price, Tags, MeasuringUnitId, Description, ProductImageUrl, ProductCompanyId } = await req.json();
   const data = {
     ProductImageUrl,
-    ProductCategoryId,
+    ProductCategoryId: new mongoose.Types.ObjectId(ProductCategoryId),
+    ProductCompanyId: new mongoose.Types.ObjectId(ProductCompanyId),
     Name,
     Price,
     Tags,
-    MeasuringUnitId,
+    MeasuringUnitId: new mongoose.Types.ObjectId(MeasuringUnitId),
     Description,
-    CreatedById: roleCheck.user._id.toString()
+    CreatedById: roleCheck.user._id
   };
 
   // console.log('user===', roleCheck)
@@ -33,10 +34,13 @@ export const createProduct = async (req) => {
   await ValidateIncomingDataWithZodSchema(CreateProductSchema, data)
 
   try {
-    const newProduct = new Product({
-      ProductImageUrl, ProductCategoryId, Name, Price, Tags, MeasuringUnitId, Description, CreatedById: roleCheck.user._id.toString()
-    })
+    // const newProduct = new Product({
+    //   ProductImageUrl, ProductCategoryId, Name, Price, Tags, 
+    //   MeasuringUnitId, Description, CreatedById: roleCheck.user._id.toString(), 
+    //   ProductCompanyId
+    // })
 
+    const newProduct = new Product(data)
     const savedProduct = await newProduct.save();
     return new Response(
       JSON.stringify({ success: true, message: "Product created successfully", data: savedProduct, statusCode: 200 }),
@@ -52,180 +56,7 @@ export const createProduct = async (req) => {
 
 }
 
-export const SearchProducts_old = async (req) => {
-  const roleCheck = await checkUserRoleAndPermission(['Admin', 'Customer'], ['AddItem', 'CancelOrder'])(req);
-  // If the middleware returns a Response object (e.g., error), return it immediately
-  if (roleCheck instanceof Response) {
-    return roleCheck;
-  }
-
-  try {
-    const products = await Product.aggregate([
-      {
-        $match: { IsActive: true }
-      },
-      {
-        $sort: { name: 1 } // Sort in ascending order by 'name'
-      },
-      {
-        $lookup: {
-          from: 'productcategories',
-          localField: 'ProductCategoryId',
-          foreignField: '_id',
-          as: 'Productcategory',
-        }
-      },
-      {
-        $facet: {
-          data: [ // Retrieve sorted data
-            { $match: {} }, // Match all documents
-            {
-              $project: {
-                _id: 1,
-                Name: 1,
-                ProductCategoryId: 1,
-                Price: 1,
-                Tags: 1,
-                MeasuringUnitId: 1,
-                Description: 1,
-                ProductImageUrl: 1,
-                Productcategory: 1
-              }
-            } // Project only _id and name fields
-          ],
-          totalRecords: [ // Retrieve total record count
-            { $count: 'total' }
-          ]
-        }
-      },
-      {
-        $project: {
-          data: 1,
-          totalRecords: { $arrayElemAt: ['$totalRecords.total', 0] } // Extract total count
-        }
-      }
-    ]).exec();
-
-    // return categories;
-    console.log('categories==', products)
-    return new Response(JSON.stringify({ success: true, data: products[0] }))
-
-  } catch (error) {
-    console.error('Error fetching products:', error);
-    throw new CustomError("Error", 500);
-  }
-}
-
-export const SearchProducts1 = async (req) => {
-  const roleCheck = await checkUserRoleAndPermission(['Admin', 'Customer'], ['AddItem', 'CancelOrder'])(req);
-  // If the middleware returns a Response object (e.g., error), return it immediately
-  if (roleCheck instanceof Response) {
-    return roleCheck;
-  }
-
-  try {
-    const url = new URL(req.url);
-
-    const searchQuery = url.searchParams.get('q') || ''; // Search by name
-    const category = url.searchParams.get('category') || ''; // Filter by category ID
-    const priceMin = parseFloat(url.searchParams.get('priceMin') || '0'); // Minimum price
-    const priceMax = parseFloat(url.searchParams.get('priceMax') || 'Infinity'); // Maximum price
-    const tags = url.searchParams.get('tags')?.split(',') || []; // Filter by tags (comma-separated)
-    const page = parseInt(url.searchParams.get('page') || '1', 10); // Page number
-    const limit = parseInt(url.searchParams.get('limit') || '10', 10); // Items per page
-
-    const filters = { IsActive: true };
-
-    // Add dynamic filters based on query parameters
-    if (searchQuery) {
-      filters.Name = { $regex: searchQuery, $options: 'i' }; // Case-insensitive search
-    }
-    if (category) {
-      filters.ProductCategoryId = category; // Match category ID
-    }
-    if (priceMin || priceMax) {
-      filters.Price = { $gte: priceMin, $lte: priceMax }; // Match price range
-    }
-    if (tags.length) {
-      filters.Tags = { $in: tags }; // Match at least one tag
-    }
-
-    const skip = (page - 1) * limit;
-
-    const products = await Product.aggregate([
-      { $match: filters }, // Apply filters
-      { $sort: { Name: 1 } }, // Sort by name
-      {
-        $lookup: {
-          from: 'productcategories',
-          localField: 'ProductCategoryId',
-          foreignField: '_id',
-          as: 'Productcategory',
-        },
-      },
-      {
-        $lookup: {
-          from: 'measuringunits',
-          localField: 'MeasuringUnitId',
-          foreignField: '_id',
-          as: 'MeasurmentUnit',
-        },
-      },
-      {
-        $facet: {
-          data: [
-            { $skip: skip }, // Skip documents for pagination
-            { $limit: limit }, // Limit the number of documents
-            {
-              $project: {
-                _id: 1,
-                Name: 1,
-                ProductCategoryId: 1,
-                Price: 1,
-                Tags: 1,
-                MeasuringUnitId: 1,
-                Description: 1,
-                ProductImageUrl: 1,
-                Productcategory: 1,
-                Quantity: 1,
-                BuyingPrice: 1,
-                MeasurmentUnit: 1,
-                ExpiryDate: 1
-              },
-            },
-          ],
-          totalRecords: [{ $count: 'total' }], // Count total records
-        },
-      },
-      {
-        $project: {
-          data: 1,
-          totalRecords: { $arrayElemAt: ['$totalRecords.total', 0] }, // Extract total count
-        },
-      },
-    ]).exec();
-
-    // const batches = await ProductBatch.find({ ProductId: product._id });
-
-    return new Response(
-      JSON.stringify({
-        success: true,
-        data: products[0] || { data: [], totalRecords: 0 },
-        currentPage: page,
-        totalPages: Math.ceil((products[0]?.totalRecords || 0) / limit),
-      }),
-      { status: 200, headers: { 'Content-Type': 'application/json' } }
-    );
-  } catch (error) {
-    console.error('Error fetching products:', error);
-    return new Response(
-      JSON.stringify({ success: false, error: 'Error fetching products' }),
-      { status: 500, headers: { 'Content-Type': 'application/json' } }
-    );
-  }
-};
-
-export const SearchProducts = async (req) => {
+export const SearchProducts2 = async (req) => {
   const roleCheck = await checkUserRoleAndPermission(['Admin', 'Customer'], ['AddItem', 'CancelOrder', 'Admin'])(req);
 
   if (roleCheck instanceof Response) {
@@ -243,9 +74,9 @@ export const SearchProducts = async (req) => {
       .skip((page - 1) * limit)
       .limit(limit);
 
-    console.log('products===', products)
+    // console.log('products===', products)
     if (!products || products.length === 0) {
-      return new Response(JSON.stringify({ success: false, message: 'No products found', products:[] }), { status: 200 });
+      return new Response(JSON.stringify({ success: false, message: 'No products found', products: [] }), { status: 200 });
     }
 
     // Map products to fetch batch data and include all product attributes
@@ -264,7 +95,7 @@ export const SearchProducts = async (req) => {
           Name: product.Name,
           Description: product.Description,
           Tags: product.Tags || [],
-          Price:product.Price,
+          Price: product.Price,
           IsActive: product.IsActive,
           CreatedById: product.CreatedById,
           LastUpdatedById: product.LastUpdatedById,
@@ -283,6 +114,194 @@ export const SearchProducts = async (req) => {
     return new Response(JSON.stringify({ success: true, products: productData }), { status: 200 });
   } catch (error) {
     console.error(error);
+    return new Response(JSON.stringify({ success: false, error: error.message }), { status: 500 });
+  }
+};
+
+export const SearchProducts3 = async (req) => {
+  const roleCheck = await checkUserRoleAndPermission(['Admin', 'Customer'], ['AddItem', 'CancelOrder', 'Admin'])(req);
+
+  if (roleCheck instanceof Response) {
+    return roleCheck;
+  }
+
+  try {
+    const url = new URL(req.url);
+    const query = url.searchParams.get('q') || '';
+    const page = parseInt(url.searchParams.get('page')) || 1;
+    const limit = parseInt(url.searchParams.get('limit')) || 10;
+    console.log('query--', query)
+    // Search products by name
+    const searchRegex = new RegExp(query, 'i');
+    const products = await Product.find({ Name: { $regex: searchRegex } })
+      .populate('ProductCompanyId')  // Fetch Product Company details
+      .populate('ProductCategoryId') // Fetch Product Category details
+      .populate('MeasuringUnitId')   // Fetch Measuring Unit details
+      .skip((page - 1) * limit)
+      .limit(limit);
+
+    if (!products || products.length === 0) {
+      return new Response(JSON.stringify({ success: false, message: 'No products found', products: [] }), { status: 200 });
+    }
+
+    // Map products to include batch details
+    const productData = await Promise.all(
+      products.map(async (product) => {
+        // Fetch all batches associated with the product
+        const batches = await ProductBatch.find({ ProductId: product._id });
+
+        // Calculate total quantity and average buying price from batches
+        const totalQuantity = batches.reduce((sum, batch) => sum + batch.Quantity, 0);
+        const averageBuyingPrice =
+          batches.reduce((sum, batch) => sum + batch.BuyingPrice * batch.Quantity, 0) / totalQuantity || 0;
+
+        return {
+          _id: product._id,
+          Name: product.Name,
+          Description: product.Description,
+          Tags: product.Tags || [],
+          Price: product.Price,
+          IsActive: product.IsActive,
+          CreatedById: product.CreatedById,
+          LastUpdatedById: product.LastUpdatedById,
+
+          // Populated Data
+          ProductCompany: product.ProductCompanyId,   // Company details
+          ProductCategory: product.ProductCategoryId, // Category details
+          MeasuringUnit: product.MeasuringUnitId,     // Measuring unit details
+
+          TotalQuantity: totalQuantity,
+          AverageBuyingPrice: averageBuyingPrice.toFixed(2),
+          Batches: batches.map(({ ExpiryDate, Quantity, BuyingPrice }) => ({
+            ExpiryDate,
+            Quantity,
+            BuyingPrice,
+          })),
+        };
+      })
+    );
+
+    return new Response(JSON.stringify({ success: true, products: productData }), { status: 200 });
+
+  } catch (error) {
+    console.error(error);
+    return new Response(JSON.stringify({ success: false, error: error.message }), { status: 500 });
+  }
+};
+
+export const SearchProducts = async (req) => {
+  const roleCheck = await checkUserRoleAndPermission(['Admin', 'Customer'], ['AddItem', 'CancelOrder', 'Admin'])(req);
+
+  if (roleCheck instanceof Response) {
+    return roleCheck;
+  }
+
+  try {
+    const url = new URL(req.url);
+    const query = url.searchParams.get('q') || '';
+    const page = Math.max(1, Number(url.searchParams.get('page')) || 1);
+    const limit = Math.max(1, Number(url.searchParams.get('limit')) || 10);
+    const productCompanyId = url.searchParams.get('ProductCompanyId') || null;
+    const ProductCategoryId = url.searchParams.get('ProductCategoryId') || null;
+    const sortBy = url.searchParams.get('sortBy') || 'Price'; // Default sorting by Price
+    const sortOrder = url.searchParams.get('sortOrder') === 'desc' ? 1 : -1; // Default ascending
+
+    console.log('Search Query:', query, '| Page:', page, '| Limit:', limit, '| SortBy:', sortBy, '| SortOrder:', sortOrder);
+    
+    // Build dynamic filters
+    const filters = {};
+    if (query) filters.Name = { $regex: new RegExp(query, 'i') };
+    if (productCompanyId) filters.ProductCompanyId = productCompanyId;
+    if (ProductCategoryId) filters.ProductCategoryId = ProductCategoryId;
+
+    // Fetch all matching products (WITHOUT pagination yet)
+    const products = await Product.find(filters)
+      .populate('ProductCompanyId', 'Name')
+      .populate('ProductCategoryId', 'Name')
+      .populate('MeasuringUnitId')
+      .lean();
+
+    if (!products || products.length === 0) {
+      return new Response(JSON.stringify({ success: false, message: 'No products found', products: [] }), { status: 200 });
+    }
+
+    // Fetch batches in a single query
+    const productIds = products.map(p => p._id);
+    const batches = await ProductBatch.find({ ProductId: { $in: productIds } }).lean();
+
+    // Create a map of batches by product ID
+    const batchMap = batches.reduce((acc, batch) => {
+      if (!acc[batch.ProductId]) acc[batch.ProductId] = [];
+      acc[batch.ProductId].push(batch);
+      return acc;
+    }, {});
+
+    // Calculate total stock per product
+    const stockMap = batches.reduce((acc, batch) => {
+      acc[batch.ProductId] = (acc[batch.ProductId] || 0) + batch.Quantity;
+      return acc;
+    }, {});
+
+    // Map products with batch details
+    let productData = products.map(product => {
+      const productBatches = batchMap[product._id] || [];
+      const totalQuantity = stockMap[product._id] || 0;
+
+      // Calculate average buying price
+      const averageBuyingPrice =
+        totalQuantity > 0
+          ? (productBatches.reduce((sum, batch) => sum + batch.BuyingPrice * batch.Quantity, 0) / totalQuantity)
+          : 0;
+
+      return {
+        _id: product._id,
+        Name: product.Name,
+        Description: product.Description,
+        Tags: product.Tags || [],
+        Price: product.Price,
+        IsActive: product.IsActive,
+        CreatedById: product.CreatedById,
+        LastUpdatedById: product.LastUpdatedById,
+
+        // Populated Data
+        ProductCompany: product.ProductCompanyId,
+        ProductCategory: product.ProductCategoryId,
+        MeasuringUnit: product.MeasuringUnitId,
+
+        // Stock details
+        TotalStockQuantity: totalQuantity,
+        AverageBuyingPrice: averageBuyingPrice.toFixed(2),
+
+        // Batch details
+        Batches: productBatches.map(({ ExpiryDate, Quantity, BuyingPrice }) => ({
+          ExpiryDate,
+          Quantity,
+          BuyingPrice,
+        })),
+      };
+    });
+
+    // **Sorting logic BEFORE pagination**
+    productData.sort((a, b) => {
+      if (sortBy === 'Price') return (a.Price - b.Price) * sortOrder;
+      if (sortBy === 'BuyingPrice') return (a.AverageBuyingPrice - b.AverageBuyingPrice) * sortOrder;
+      if (sortBy === 'Quantity') return (a.TotalStockQuantity - b.TotalStockQuantity) * sortOrder;
+      return 0;
+    });
+
+    // **Apply pagination AFTER sorting**
+    const totalProducts = productData.length;
+    const totalPages = Math.ceil(totalProducts / limit);
+    productData = productData.slice((page - 1) * limit, page * limit);
+
+    return new Response(JSON.stringify({
+      success: true,
+      products: productData,
+      pagination: { totalPages, currentPage: page, totalItems: totalProducts }
+    }), { status: 200 });
+
+  } catch (error) {
+    console.error("Error in SearchProducts:", error.message, "\nRequest URL:", req.url);
     return new Response(JSON.stringify({ success: false, error: error.message }), { status: 500 });
   }
 };
@@ -449,4 +468,22 @@ export const getProductsByEachCategory = async (req) => {
     );
   }
 };
+
+// Query the ProductBatch collection for products expiring in a given timeframe
+
+// const getExpiringProducts = async (req, res) => {
+//   const { startDate, endDate } = req.query;
+
+//   try {
+//     const expiringBatches = await ProductBatch.find({
+//       ExpiryDate: { $gte: new Date(startDate), $lte: new Date(endDate) },
+//     }).populate('ProductId');
+
+//     res.status(200).json({ success: true, data: expiringBatches });
+//   } catch (error) {
+//     console.error(error);
+//     res.status(500).json({ success: false, message: 'Failed to fetch expiring products.' });
+//   }
+// };
+
 

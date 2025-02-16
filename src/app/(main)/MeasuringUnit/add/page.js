@@ -25,10 +25,9 @@ import Visibility from "@mui/icons-material/Visibility";
 import VisibilityOff from "@mui/icons-material/VisibilityOff";
 import { green } from "@mui/material/colors";
 import {useSelector} from 'react-redux';
-import axios from "axios";
-import AddProductCss from "../../../css/AddProductCss";
-import {Set_Notification} from '../../../services/page/common';
-import {Add_Measurment_Unit} from '../../../services/page/MeasurmentUnit';
+import AddProductCss from "../../../../css/AddProductCss";
+import {Set_Notification} from '../../../../services/page/common';
+import {Add_Measurment_Unit} from '../../../../services/page/MeasurmentUnit';
 
 // validationSchema
 const validationSchema = Yup.object().shape({
