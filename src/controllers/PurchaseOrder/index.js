@@ -380,6 +380,10 @@ export const AddPurchaseOrder = async (req) => {
       return new Response(JSON.stringify({ success: false, error: 'Shop not found' }), { status: 404 });
     }
 
+    if (!PurchaseDate) {
+      return new Response(JSON.stringify({ success: false, error: 'PurchaseDate is mandatory' }), { status: 404 });
+    }
+
     let TotalPrice = 0;
     const BatchesId = []
     // Update product quantities, calculate average buying price, and calculate total amount

@@ -46,7 +46,7 @@ const LoginPage = () => {
   };
 
   const pushToDashboard =()=>{
-    router.push('/product/dashboard')
+    router.push('/MeasuringUnit/dashboard')
   }
   
   return (

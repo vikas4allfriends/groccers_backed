@@ -26,21 +26,19 @@ import { LocalizationProvider } from '@mui/x-date-pickers';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import { Get_Products } from '../../../../services/page/Product';
-import api from '../../../../services/api';
 import { Formik, Form } from "formik";
 import * as Yup from "yup";
 import { renderTextFieldSmall } from '../../../../components/TextField';
 import withAuth from '../../../../hoc/withAuth';
 import { useRouter } from "next/navigation";
+import api from '../../../../services/api';
 
 const SalesOrder = () => {
   const shopRef = useRef(null);
   const productRef = useRef(null);
   const router = useRouter();
-  const [items, setItems] = useState([{ productId: '', quantity: '', price: '', productName: '', expiryDate: null }]);
-  const [shopId, setShopId] = useState('');
   const [productSuggestions, setProductSuggestions] = useState({});
-  const [shopSuggestions, setShopSuggestions] = useState([]);
+  const [customerSuggestions, setCustomerSuggestions] = useState([]);
   const { enqueueSnackbar } = useSnackbar();
 
   // validationSchema
@@ -63,10 +61,10 @@ const SalesOrder = () => {
   // Function to close suggestions when clicking outside
   const handleClickOutside = (event) => {
     if (shopRef.current && !shopRef.current.contains(event.target)) {
-      setShopSuggestions([]); // Clear shop suggestions
+      setCustomerSuggestions([]); // Clear shop suggestions
     }
     if (productRef.current && !productRef.current.contains(event.target)) {
-      setProductSuggestions([]); // Clear product suggestions
+      setCustomerSuggestions([]); // Clear product suggestions
     }
   };
 
@@ -80,24 +78,11 @@ const SalesOrder = () => {
   }, []);
 
   const initialValues = {
-    items: [{
-      customerName:'',
-      productId: '',
-      quantity: '',
-      price: '',
-      productName: '',
-      expiryDate: null,
-      MeasuringUnit: '',
-      MUQ: 0,
-      PricePerUnit: 0,
-      PricePerMeasuringUnit: 0,
-      TotalPrice: 0,
-      SalesDate:null,
-      TotalStockQuantity:null
-    }],
-    PurchaseDate: null,
-    shopId: '',
-    shopSearch:''
+    items: [],
+    CustomerName: '',
+    CustomerId: '',
+    SalesDate: null,
+    isAddNewCustomer:false
   };
 
   // Debounced shop search
@@ -105,47 +90,57 @@ const SalesOrder = () => {
     debounce(async (query) => {
       if (query.length > 2) {
         try {
-          const res = await axios.get('/Shop/Search', {
+          const res = await api.get('/Customer/SearchCustomer', {
             params: { q: query, page: 1, limit: 10 },
           });
-          setShopSuggestions(res.data.shops || []);
+          setCustomerSuggestions(res.data.customers || []);
         } catch (error) {
           enqueueSnackbar('Failed to fetch shops.', { variant: 'error' });
         }
       } else {
-        setShopSuggestions([]);
+        setCustomerSuggestions([]);
       }
     }, 300),
     []
   );
 
   const handleCustomerSearch = (query, values, setFieldValue) => {
-    setFieldValue('handleCustomerSearch', query)
+    setFieldValue('CustomerName',query)
     handleCustomerSearchDebounced(query);
   };
 
-  // Debounced product search
-  const handleProductSearchDebounced = useCallback(
-    debounce(async (query, index) => {
-      if (!query.trim() || query.length <= 2) return;
+  // Handle shop selection
+  const handleCustomerSelect = (customer, setFieldValue) => {
+    // setShopSearch(shop.name);
+    // console.log('handleShopSelect==', shop)
+    setFieldValue('CustomerId', customer._id)
+    setFieldValue('customerName', customer.name)
+    setCustomerSuggestions([]);
+    console.log('customer==',customer)
+  };
 
-      try {
-        const res = await api.get('/Product/SearchProduct', {
-          params: { q: query, page: 1, limit: 10 },
-        });
+    // Debounced product search
+    const handleProductSearchDebounced = useCallback(
+      debounce(async (query, index) => {
+        if (!query.trim() || query.length <= 2) return;
+  
+        try {
+          const res = await api.get('/Product/SearchProduct', {
+            params: { q: query, page: 1, limit: 10 },
+          });
+  
+          setProductSuggestions((prev) => ({
+            ...prev,
+            [index]: res?.data?.products || [],
+          }));
+        } catch (error) {
+          enqueueSnackbar('Failed to fetch products.', { variant: 'error' });
+        }
+      }, 300),
+      [enqueueSnackbar]
+    );
 
-        setProductSuggestions((prev) => ({
-          ...prev,
-          [index]: res?.data?.products || [],
-        }));
-      } catch (error) {
-        enqueueSnackbar('Failed to fetch products.', { variant: 'error' });
-      }
-    }, 300),
-    [enqueueSnackbar]
-  );
-
-
+    
   const handleProductSearch = (query, index, values,setFieldValue,productName) => {
     const updatedItems = [...values.items];
     // console.log('updatedItems==',query, updatedItems)
@@ -154,26 +149,16 @@ const SalesOrder = () => {
     handleProductSearchDebounced(query, index);
   };
 
-  // Handle shop selection
-  const handleShopSelect = (shop, setFieldValue, shopId) => {
-    // setShopSearch(shop.name);
-    // console.log('handleShopSelect==', shop)
-    setShopId(shop._id);
-    setFieldValue('shopId',shop._id)
-    setFieldValue('shopSearch',shop.name)
-    setShopSuggestions([]);
-  };
-
   // Handle product selection
   const handleProductSelect = (product, index, values, setFieldValue) => {
-    console.log('handleProductSelect-->>>>', product)
+    console.log('product>>>>', product)
     const updatedItems = [...values.items];
     updatedItems[index].productId = product._id;
     updatedItems[index].productName = product.Name;
     updatedItems[index].MeasuringUnit = product.MeasuringUnit.Name;
     updatedItems[index].MultiplyingQty = product.MeasuringUnit.Description;
-    updatedItems[index].PricePerUnit = product.Price;
-    updatedItems[index].TotalStockQuantity = product.TotalStockQuantity;
+    updatedItems[index].TotalStockQuantity = product.TotalStockQuantity
+    updatedItems[index].PriceAtAddTime = product.Price
     // setItems(updatedItems);
     setFieldValue({...values, items:updatedItems})
     setProductSuggestions((prev) => ({
@@ -183,23 +168,23 @@ const SalesOrder = () => {
   };
 
   // Add a new row
-    const handleAddItem = (setFieldValue, values) => {
-      const newItem = { 
-        productId: '', 
-        quantity: '', 
-        price: '', 
-        productName: '', 
-        expiryDate: null, 
-        MeasuringUnit: '',
-        MUQ: 0,
-        PricePerUnit: 0,
-        PricePerMeasuringUnit: 0,
-        TotalPrice: 0
-      };
-    
-      // Ensure the array updates correctly
-      setFieldValue('items', [...values.items, newItem]);
-    }; 
+  const handleAddItem = (setFieldValue, values) => {
+    const newItem = {
+      productId: '',
+      quantity: '',
+      price: '',
+      productName: '',
+      expiryDate: null,
+      MeasuringUnit: '',
+      MUQ: 0,
+      PricePerUnit: 0,
+      PricePerMeasuringUnit: 0,
+      TotalPrice: 0
+    };
+
+    // Ensure the array updates correctly
+    setFieldValue('items', [...values.items, newItem]);
+  };
 
   // Remove a row
   const handleRemoveItem = (index, values, setFieldValue) => {
@@ -209,21 +194,29 @@ const SalesOrder = () => {
   };
 
   // Submit the purchase order
-  const handleSubmit = async (values,{resetForm}) => {
+  const handleSubmit = async (values, { resetForm }) => {
     try {
       // resetForm()
-      const {items, PurchaseDate, shopId} = values;
-      console.log('handleSubmit items--', items, PurchaseDate, shopId)
-      const response = await api.post('/PurchaseOrder/Add', { shopId, products: items, PurchaseDate });
+      const { items, SalesDate, CustomerName, CustomerId } = values;
+      console.log('handleSubmit==', values)
+      const Cart = items.map((item) => 
+        ({
+          "ProductId":item.productId,
+          "Quantity":item.quantity,
+          "PriceAtAddTime":item.PriceAtAddTime
+        })
+      );
+      console.log('handleSubmit items--', Cart, SalesDate)
+      const response = await api.post('/SalesOrder', { CustomerName, Cart, SalesDate, CustomerId });
       if (response.data.success) {
-        enqueueSnackbar('Purchase order created successfully!', { variant: 'success' });
+        enqueueSnackbar('Sales order created successfully!', { variant: 'success' });
         resetForm()
-        setItems([{ productId: '', quantity: '', price: '', productName: '', expiryDate: null }]); // Reset form
-        setShopSearch('');
-        setShopId('');
+        // setItems([{ productId: '', quantity: '', price: '', productName: '', expiryDate: null }]); // Reset form
+        // setShopSearch('');
+        // setShopId('');
       } else {
         enqueueSnackbar(response.data.error, { variant: 'error' });
-      } 
+      }
     } catch (error) {
       enqueueSnackbar('An error occurred. Please try again later.', { variant: 'error' });
     }
@@ -234,13 +227,12 @@ const SalesOrder = () => {
     console.log('handleMeasuringQtyChange==', value, updatedItems[index])
     updatedItems[index].quantity = value;
     updatedItems[index].MUQ = Math.floor(value / updatedItems[index].MultiplyingQty) + '/' + value % updatedItems[index].MultiplyingQty;
-    updatedItems[index].TotalPrice = value * updatedItems[index].PricePerUnit;
-    // updatedItems[index].MUQ = value%updatedItems[index].MultiplyingQty;
-    // updatedItems[index].MultiplyingQty = value;
+    updatedItems[index].TotalPrice = value * updatedItems[index].PriceAtAddTime;
+
     if (updatedItems[index].MUQ > 0) {
       console.log('handleMeasuringQtyChange value>0--', value)
       updatedItems[index].quantity = value * updatedItems[index].MUQ;  // Recalculate quantity
-      updatedItems[index].PricePerUnit = null; // Reset Units if MUQ is 0
+      updatedItems[index].PriceAtAddTime = null; // Reset Units if MUQ is 0
       updatedItems[index].PricePerMeasuringUnit = null;
       updatedItems[index].TotalPrice = null;
     }
@@ -269,13 +261,13 @@ const SalesOrder = () => {
 
   const PricePerUnitChange = (value, index, values, setFieldValue) => {
     const updatedItems = [...values.items];
-    updatedItems[index].PricePerUnit = value;
+    updatedItems[index].PriceAtAddTime = value;
 
     if (value > 0) {
       updatedItems[index].PricePerMeasuringUnit = (value * updatedItems[index].MultiplyingQty);
       updatedItems[index].TotalPrice = value * (updatedItems[index].quantity || 1);
     } else {
-      updatedItems[index].PricePerUnit = null; // Reset Units if MUQ is 0
+      updatedItems[index].PriceAtAddTime = null; // Reset Units if MUQ is 0
       updatedItems[index].PricePerMeasuringUnit = null;
       updatedItems[index].TotalPrice = null;
     }
@@ -319,7 +311,7 @@ const SalesOrder = () => {
     updatedItems[index].expiryDate = date;
     setFieldValue('items', updatedItems)
   }
-  
+
   const navigation = (page) => {
     router.push(`/${page}`);
   };
@@ -339,11 +331,13 @@ const SalesOrder = () => {
               // justifyContent="flex-end"
               // spacing={2}
               fullWidth
-              // style={{marginY:'5px'}}
-              // style={{ marginTop: '0px', position: 'sticky', bottom: 0, background: '#ccc', zIndex: 2, justifyContent:'space-between', display:'flex' }}
+            // style={{marginY:'5px'}}
+            // style={{ marginTop: '0px', position: 'sticky', bottom: 0, background: '#ccc', zIndex: 2, justifyContent:'space-between', display:'flex' }}
             >
-              <Box sx={{ flexDirection: 'row', display: 'flex', gap: 15, justifyContent:'space-between',
-                 alignItems:'center'}}>
+              <Box sx={{
+                flexDirection: 'row', display: 'flex', gap: 15, justifyContent: 'space-between',
+                alignItems: 'center'
+              }}>
                 <Typography variant="h4" >
                   Add Sales Items
                 </Typography>
@@ -373,7 +367,7 @@ const SalesOrder = () => {
             </Box>
 
             {/* Shop Selection */}
-            <Grid container spacing={2} alignItems="center" sx={{display:'flex', flexDirection:'row', marginTop:'15px'}}>
+            <Grid container spacing={2} alignItems="center" sx={{ display: 'flex', flexDirection: 'row', marginTop: '15px' }}>
               <Grid item xs={6} ref={shopRef}>
                 <TextField
                   label="Search Customer"
@@ -381,15 +375,18 @@ const SalesOrder = () => {
                   size='small'
                   value={values.customerName}
                   onChange={(e) => handleCustomerSearch(e.target.value, values, setFieldValue)}
-                  helperText="Start typing to search for shops"
+                  helperText="Start typing to search for customer"
                 />
                 {/* {renderTextFieldSmall("shopSearch", "Search Shop", 'text', null, false, null, (e) => handleShopSearch(e.target.value))} */}
-                {shopSuggestions.length > 0 && (
+                {customerSuggestions.length > 0 && (
                   <Paper style={{ position: 'absolute', zIndex: 10, maxHeight: '150px', overflowY: 'auto', width: '100%' }}>
                     <List>
-                      {shopSuggestions.map((shop) => (
-                        <ListItem key={shop._id} button onClick={() => handleShopSelect(shop, setFieldValue, shopId)}>
-                          <ListItemText primary={shop.name} secondary={`${shop.address?.city || ''}, ${shop.address?.state || ''}`} />
+                      {customerSuggestions.map((customer) => (
+                        <ListItem key={customer._id} button onClick={() => handleCustomerSelect(customer, setFieldValue)}>
+                          <ListItemText
+                            primary={customer.name}
+                            // secondary={`${shop.address?.city || ''}, ${shop.address?.state || ''}`}
+                          />
                         </ListItem>
                       ))}
                     </List>
@@ -397,24 +394,24 @@ const SalesOrder = () => {
                 )}
               </Grid>
 
-              <Grid item size='small' style={{height:'35px'}} >                
+              <Grid item size='small' style={{ height: '35px' }} >
                 <LocalizationProvider size='small' dateAdapter={AdapterDayjs}>
                   <DatePicker
                     label="Sales Date"
                     value={values.SalesDate}
                     size='small'
-                    style={{height:'35px'}}
+                    style={{ height: '35px' }}
                     onChange={(date) => {
-                      setValues({...values, SalesDate:date})
+                      setValues({ ...values, SalesDate: date })
                       console.log('date---', date.toISOString())
                     }}
-                    renderInput={(params) => 
-                    <TextField {...params} 
-                    size="small" // ✅ Ensures compact size                    
-                    fullWidth 
-                    style={{height:'35px'}}
-                    />
-                  }
+                    renderInput={(params) =>
+                      <TextField {...params}
+                        size="small" // ✅ Ensures compact size                    
+                        fullWidth
+                        style={{ height: '35px' }}
+                      />
+                    }
                   />
                 </LocalizationProvider>
               </Grid>
@@ -443,7 +440,7 @@ const SalesOrder = () => {
                         label="Search Product"
                         fullWidth
                         value={item.productName}
-                        onChange={(e) => handleProductSearch(e.target.value, index, values,setFieldValue,'productName')}
+                        onChange={(e) => handleProductSearch(e.target.value, index, values, setFieldValue, 'productName')}
                       />
                       {productSuggestions[index]?.length > 0 && (
                         <Paper
@@ -457,7 +454,7 @@ const SalesOrder = () => {
                         >
                           <List>
                             {productSuggestions[index].map((product) => (
-                              <ListItem key={product._id} button onClick={() => handleProductSelect(product, index, values,setFieldValue)}>
+                              <ListItem key={product._id} button onClick={() => handleProductSelect(product, index, values, setFieldValue)}>
                                 <ListItemText primary={product.Name} secondary={`Price: ${product.Price}`} />
                               </ListItem>
                             ))}
@@ -498,7 +495,7 @@ const SalesOrder = () => {
                     <TableCell>
                       <TextField
                         type="number"
-                        value={item.PricePerUnit}
+                        value={item.PriceAtAddTime}
                         onChange={(e) => PricePerUnitChange(e.target.value, index, values, setFieldValue)}
                         fullWidth
                       />
@@ -507,32 +504,18 @@ const SalesOrder = () => {
                       <TextField
                         type="number"
                         value={item.PricePerMeasuringUnit}
-                        // onChange={(e) =>
-                        //   setItems(
-                        //     items.map((itm, idx) =>
-                        //       idx === index ? { ...itm, price: e.target.value } : itm
-                        //     )
-                        //   )
-                        // }
                         onChange={(e) => PricePerMeasuringUnitChange(e.target.value, index, values, setFieldValue)}
-                        // label="Price/Measuring Unit"
                         fullWidth
+                        disabled
                       />
                     </TableCell>
                     <TableCell>
                       <TextField
                         type="number"
                         value={item.TotalPrice}
-                        // onChange={(e) =>
-                        //   setItems(
-                        //     items.map((itm, idx) =>
-                        //       idx === index ? { ...itm, price: e.target.value } : itm
-                        //     )
-                        //   )
-                        // }
                         onChange={(e) => TotalPriceChange(e.target.value, index, values, setFieldValue)}
-                        // label="Total Price"
                         fullWidth
+                        disabled
                       />
                     </TableCell>
                     {/* <TableCell>
@@ -563,7 +546,7 @@ const SalesOrder = () => {
               style={{ marginTop: '20px', position: 'sticky', bottom: 0, background: '#fff', zIndex: 2 }}
             >
               <Grid item>
-                <Button onClick={()=>handleAddItem(setFieldValue, values)} variant="contained" color="primary">
+                <Button onClick={() => handleAddItem(setFieldValue, values)} variant="contained" color="primary">
                   Add Item
                 </Button>
               </Grid>
