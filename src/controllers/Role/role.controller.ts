@@ -1,5 +1,5 @@
 import dbConnect from '../../lib/dbConnect';
-import Roles from '../../models/role.models';
+import Roles from '../../models/Role';
 import { CustomError } from '../../utils/error';
 
 

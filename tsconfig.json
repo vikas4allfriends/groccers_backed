@@ -27,7 +27,7 @@
     ".next/types/**/*.ts",
     "**/*.ts",
     "**/*.tsx"
-, "src/models/Shop", "src/models/PurchaseOrder"  ],
+, "src/models/Shop", "src/models/PurchaseOrder", "src/models/UserPermission/index.js", "src/controllers/Permission/index.js"  ],
   "exclude": [
     "node_modules"
   ]

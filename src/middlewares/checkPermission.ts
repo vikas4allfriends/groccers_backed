@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import User from '../models/user.models';
-import Role from '../models/role.models';
-import Permission from '../models/userPermissions.models';
+import Role from '../models/Role';
+import Permission from '../models/UserPermission';
 import userModel from '../models/user.models';
 import dbConnect from '../lib/dbConnect';
 import mongoose from 'mongoose';

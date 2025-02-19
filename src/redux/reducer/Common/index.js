@@ -1,4 +1,4 @@
-import {SET_NOTIFICATION, SPINNER_STATUS_REQUESTED} from '../../../constants';
+import {GET_PERMISSION_SUCESS, SET_NOTIFICATION, SPINNER_STATUS_REQUESTED} from '../../../constants';
 
 const initialState = {
     SpinnerStatus: false,
@@ -6,6 +6,9 @@ const initialState = {
         open:false,
         message:'',
         severity:'success'
+    },
+    permissions:{
+        PermissionList:[]
     }
 }
 
@@ -18,6 +21,10 @@ export const Common_Data = (state = initialState, action) => {
         case SET_NOTIFICATION:
             console.log('SET_NOTIFICATION payload--', action.payload)
             return {...state, notification:action.payload}
+
+        case GET_PERMISSION_SUCESS:
+            console.log('GET_PERMISSION_SUCESS payload--', action.payload)
+            return{...state, permissions:{...state.permissions, PermissionList:action.payload.permissions, Pagination:action.payload.pagination}}
         default:
             return state;
     }

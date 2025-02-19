@@ -1,5 +1,5 @@
 import mongoose, { Schema, Document } from 'mongoose';
-import Role from '../models/role.models';
+import Role from './Role';
 
 // Define the User interface
 export interface IUser extends Document {

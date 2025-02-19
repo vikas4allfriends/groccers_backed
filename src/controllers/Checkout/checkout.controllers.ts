@@ -6,7 +6,7 @@ import { CustomError } from '../../utils/error';
 import { createPayment } from '../Payment/Payment.controller';
 import ProductBatch from '../../models/ProductBatch';
 import Customer from '../../models/Customer';
-import Role from '../../models/role.models';
+import Role from '../../models/Role';
 
 export const checkoutCart1 = async (req: Request, res: Response) => {
     const roleCheck = await checkUserRoleAndPermission(['Admin', 'Customer'], ['AddItem', 'CancelOrder'])(req);
@@ -243,114 +243,6 @@ export const checkoutCart = async (req: Request, res: Response) => {
 };
 
 // Checkout if oder is coming from web app
-export const checkoutWebCart1 = async (req: Request, res: Response) => {
-    // const roleCheck = await checkUserRoleAndPermission(['Admin', 'Customer'], ['AddItem', 'CancelOrder'])(req);
-
-    const requestBody = await req.json();
-    let { Cart, DeliveryAddress, IsPaid, Discount = 0, DeliveryCharge = 0, CustomerId, SalesDate, CustomerName } = requestBody;
-
-    console.log('data===', requestBody);
-
-    // if (roleCheck instanceof Response) {
-    //     return roleCheck;
-    // }
-
-    if (!SalesDate) {
-        return new Response(JSON.stringify({ success: false, error: 'SalesDate is mandatory field.' }), { status: 404 });
-    }
-    // If CustomerId is not provided, create a new user
-    if (!CustomerId) {
-
-        if (!CustomerName) {
-            return new Response(JSON.stringify({ success: false, error: 'CustomerName is required to create a new user.' }), { status: 400 });
-            // throw new CustomError("CustomerName is required to create a new user.", 400);
-        }
-
-        const role = await Role.findOne({ name: "Customer" })
-
-        if (!role) {
-            return new Response(JSON.stringify({ success: false, error: 'Cutomer Role not found in Database to create new user.' }), { status: 400 });
-        }
-
-        console.log('role id -- ', role)
-        try {
-            const newUser = new User({
-                FirstName: CustomerName,
-                Role: role?._id,
-                IsActive: true,
-            });
-
-            const savedUser = await newUser.save();
-            CustomerId = savedUser._id.toString(); // Assign newly created user ID to CustomerId
-            console.log("New Customer Created:", savedUser);
-        } catch (error) {
-            console.error("Error creating new customer:", error);
-            return new Response(JSON.stringify({ success: false, error: 'Error creating new customer.' }), { status: 500 });
-        }
-    }
-
-    if (!Cart || Cart.length === 0 || Cart === null) {
-        console.log('Cart is empty');
-        return new Response(JSON.stringify({ success: false, error: 'Cart is empty' }), { status: 400 });
-    }
-
-    try {
-        // Calculate the total price
-        const ItemsPrice = Cart.reduce((sum, item) => sum + item.Quantity * item.PriceAtAddTime, 0);
-        const TotalPrice = (ItemsPrice - Discount) + DeliveryCharge;
-        console.log('ItemsPrice TotalPrice', ItemsPrice, TotalPrice)
-
-        // Generate a unique order ID
-        const orderId = uuidv4();
-
-        // Create an order object
-        const order = new Order({
-            OrderId: orderId,
-            UserId: CustomerId, // Use existing or newly created CustomerId
-            Items: Cart,
-            TotalPrice: TotalPrice,
-            IsPaid: IsPaid,
-            OrderStatus: 'Confirmed',
-            Discount: Discount,
-            DeliveryCharge: DeliveryCharge,
-            IsCashOnDelivery: false,
-            DeliveryAddress: {
-                fullName: DeliveryAddress.fullName || "NA",
-                mobileNumber: DeliveryAddress.mobileNumber || "NA",
-                houseNumber: DeliveryAddress.houseNumber || "NA",
-                addressLine1: DeliveryAddress.addressLine1 || "NA",
-                addressLine2: DeliveryAddress.addressLine2 || '',
-                locality: DeliveryAddress.locality || '',
-                street: DeliveryAddress.street || '',
-                city: DeliveryAddress.city || "NA",
-                state: DeliveryAddress.state || "NA",
-                country: DeliveryAddress.country || "NA",
-                pinCode: DeliveryAddress.pinCode.toString() || "NA",
-            },
-        });
-
-        // Deduct stock and save order
-        await sellProducts(Cart);
-        await order.save();
-
-        return new Response(
-            JSON.stringify({
-                message: 'Checkout successful. Order created.',
-                order: {
-                    OrderId: orderId,
-                    Items: Cart.Items,
-                    TotalPrice: TotalPrice,
-                },
-                success: true,
-                statusCode: 200,
-            })
-        );
-    } catch (error) {
-        console.error(error);
-        throw new CustomError('Error during checkout.', 500);
-    }
-};
-
 export const checkoutWebCart = async (req, res) => {
     
     try {

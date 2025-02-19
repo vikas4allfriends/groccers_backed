@@ -70,6 +70,8 @@ function SideDrawer({ mobileOpen, handleDrawerToggle }) {
         { text: "PRODUCT COMPANY", path: "/ProductCompany/Dashboard" },
         { text: "PRODUCT CATEGORY", path: "/productCategory/dashboard" },
         { text: "MEASURMENT UNIT", path: "/MeasuringUnit/dashboard" },
+        { text: "ROLE", path: "/Role/Add" },
+        { text: "PERMISSION", path: "/Permission/Dashboard" },
     ];
 
     const handleLogout =()=>{

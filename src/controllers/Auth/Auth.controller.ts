@@ -1,5 +1,5 @@
 import dbConnect from '../../lib/dbConnect';
-import Role from '../../models/role.models';
+import Role from '../../models/Role';
 import userModel, { IUser } from '../../models/user.models';
 import { CustomError } from '../../utils/error';
 import { SignUpSchema } from '../../zod_schemas/signUpSchema';

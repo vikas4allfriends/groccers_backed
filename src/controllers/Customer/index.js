@@ -25,15 +25,27 @@ export const SearchCustomers = async (req) => {
     if (CustomerId) filters._id = CustomerId;
 
     // Fetch all matching products (WITHOUT pagination yet)
-    // const customerList = await Customer.find(filters)
-    //   // .populate('role')
-    //   .lean();
+    const customerList = await Customer.find(filters)
+      // .populate('role')
+      .lean();
 
-    const customerList = await Customer.aggregate([
-      {
-        $match: filters
-      },
-    ])
+    // const customerList = await Customer.aggregate([
+    //   {
+    //     $match: filters
+    //   },
+    //   {
+    //     $lookup: {
+    //       from: 'roles', // Collection name for the Role model
+    //       localField: 'role', // Field in the User collection
+    //       foreignField: '_id', // Field in the Role collection
+    //       as: 'roleData', // Output array field
+    //     },
+    //   },
+    //   {
+    //     $unwind: { path: '$roleData', preserveNullAndEmptyArrays: true }, // Unwind roleData
+    //   },
+    // ]).exec
+
     if (!customerList || customerList.length === 0) {
       return new Response(JSON.stringify({ success: false, message: 'No cutomer found', customers: [] }), { status: 200 });
     }
