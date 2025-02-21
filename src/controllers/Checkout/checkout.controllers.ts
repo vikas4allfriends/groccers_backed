@@ -174,11 +174,15 @@ export const checkoutCart = async (req: Request, res: Response) => {
 
         // Generate a unique order ID
         const orderId = uuidv4();
+        let CustomerRefId = userId;
+        let CustomerType = "User"; // This is a registered mobile user
 
         // Create an order object
         const order = new Order({
             OrderId: orderId,
-            UserId: userId,
+            // UserId: userId,
+            CustomerRefId,  // Save dynamically determined customer reference
+            CustomerType,   // Save the customer type (User or Guest)
             Items: cart.Items, // Copy items from the cart
             TotalPrice: TotalPrice,
             IsPaid: isCashOnDelivery, // If COD, mark as paid
@@ -244,7 +248,7 @@ export const checkoutCart = async (req: Request, res: Response) => {
 
 // Checkout if oder is coming from web app
 export const checkoutWebCart = async (req, res) => {
-    
+
     try {
         const requestBody = await req.json();
         let { Cart, DeliveryAddress, IsPaid, Discount = 0, DeliveryCharge = 0, CustomerId, SalesDate, CustomerName } = requestBody;
@@ -263,6 +267,9 @@ export const checkoutWebCart = async (req, res) => {
             console.log('Cart is empty');
             return new Response(JSON.stringify({ success: false, error: 'Cart is empty' }), { status: 400 });
         }
+
+        let CustomerRefId;
+        let CustomerType;
 
         // If CustomerId is not provided, create a new user
         if (!CustomerId) {
@@ -302,8 +309,12 @@ export const checkoutWebCart = async (req, res) => {
             });
 
             const savedUser = await newCustomer.save();
-            CustomerId = savedUser._id.toString();
+            CustomerRefId = savedUser._id.toString();
+            CustomerType = "Customer"; // This is a direct store customer
             console.log("New Customer Created:", savedUser);
+        } else {
+            CustomerRefId = CustomerId;
+            CustomerType = "Customer"; // This is a registered mobile user
         }
 
         // Calculate the total price
@@ -319,8 +330,11 @@ export const checkoutWebCart = async (req, res) => {
             OrderId: orderId,
             UserId: CustomerId,
             Items: Cart,
+            CustomerRefId,  // Save dynamically determined customer reference
+            CustomerType,   // Save the customer type (User or Guest)
             TotalPrice: TotalPrice,
             IsPaid: IsPaid,
+            SalesDate: SalesDate,
             OrderStatus: 'Confirmed',
             Discount: Discount,
             DeliveryCharge: DeliveryCharge,

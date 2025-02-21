@@ -46,7 +46,6 @@ function* handle_GetRole(values) {
     try {
         const data = yield call(post, values)
         yield put({ type: GET_ROLE_SUCESS, payload: data })
-        window.location.replace("/product/dashboard");
     } catch (error) {
         // console.log('handle_Get_Cart Saga Watcher ====>>>>>>', error)
     }

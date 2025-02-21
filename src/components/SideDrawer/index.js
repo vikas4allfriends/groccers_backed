@@ -53,24 +53,16 @@ function SideDrawer({ mobileOpen, handleDrawerToggle }) {
     const styles = DrawerCss(theme);
     const pathname = usePathname();
 
-    // const token = useSelector((store)=> store.Auth_Data.token)
-    // console.log('token in Provider', token)
-    //   useEffect(() => {
-    //     if(!token){
-    //     router.push('/Login')
-    //     }
-    //   }, [token])
-
     const menuItems = [
         { text: "DASHBOARD", path: "/" },
         { text: "SHOP", path: "/shop/dashboard" },
         { text: "PURCHASE ORDER", path: "/purchaseOrder/dashboard" },
-        { text: "SALES ORDER", path: "/salesOrder/add" },
+        { text: "SALES ORDER", path: "/salesOrder/Dashboard" },
         { text: "PRODUCT MANAGEMENT", path: "/product/dashboard" },
         { text: "PRODUCT COMPANY", path: "/ProductCompany/Dashboard" },
         { text: "PRODUCT CATEGORY", path: "/productCategory/dashboard" },
         { text: "MEASURMENT UNIT", path: "/MeasuringUnit/dashboard" },
-        { text: "ROLE", path: "/Role/Add" },
+        { text: "ROLE", path: "/Role/Dashboard" },
         { text: "PERMISSION", path: "/Permission/Dashboard" },
     ];
 

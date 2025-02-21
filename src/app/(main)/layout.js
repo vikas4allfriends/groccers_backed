@@ -7,6 +7,7 @@ import Providers from "../../redux/provider";
 import LoadingOverLay from "../../components/LoadingOverLay";
 import {setRouter} from "../../utils/navigation";
 import {useRouter} from 'next/navigation';
+import Custom_Snackbar from '../../components/Snackbar';
 
 const geistSans = localFont({
   src: "../fonts/GeistVF.woff",
@@ -36,6 +37,7 @@ export default function MainLayout({ children }) {
           <SidebarLayout>
             <LoadingOverLay>
               {children}
+              <Custom_Snackbar />
             </LoadingOverLay>
           </SidebarLayout>
         </Providers>

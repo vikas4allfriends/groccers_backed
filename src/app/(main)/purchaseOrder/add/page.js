@@ -4,8 +4,8 @@ import React, { useState, useCallback, useEffect, useRef } from 'react';
 import {
   TextField,
   Button,
-  Grid,
-  Box,
+  // Grid,
+  Alert,
   Table,
   TableBody,
   TableCell,
@@ -17,7 +17,8 @@ import {
   List,
   ListItem,
   ListItemText,
-  Grid2,
+  Snackbar,
+  Box
 } from '@mui/material';
 import { useSnackbar } from 'notistack';
 import axios from '../../../../components/axios';
@@ -25,18 +26,23 @@ import debounce from 'lodash/debounce';
 import { LocalizationProvider } from '@mui/x-date-pickers';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
-import { Get_Products } from '../../../../services/page/Product';
 import api from '../../../../services/api';
 import { Formik, Form } from "formik";
 import * as Yup from "yup";
-import { renderTextFieldSmall } from '../../../../components/TextField';
 import withAuth from '../../../../hoc/withAuth';
 import { useRouter } from "next/navigation";
+import { useDispatch, useSelector } from 'react-redux';
+import { SET_NOTIFICATION } from '../../../../constants';
+import { Set_Notification } from '../../../../services/page/common';
+import { green } from "@mui/material/colors";
+import Grid from '@mui/material/Grid2';
 
 const AddPurchaseItems = () => {
   const shopRef = useRef(null);
   const productRef = useRef(null);
   const router = useRouter();
+  const dispatch = useDispatch();
+  const notification = useSelector((store) => store.Common_Data.notification);
   const [items, setItems] = useState([{ productId: '', quantity: '', price: '', productName: '', expiryDate: null }]);
   const [shopSearch, setShopSearch] = useState('');
   const [PurchaseDate, setPurchaseDate] = useState(null)
@@ -63,6 +69,17 @@ const AddPurchaseItems = () => {
     //   })
     // ),
   });
+
+  const handleCloseNotification = (event, reason) => {
+    if (reason === "clickaway") {
+      return;
+    }
+    Set_Notification({
+      open: false,
+      message: '',
+      severity: ''
+    })
+  };
 
   // Function to close suggestions when clicking outside
   const handleClickOutside = (event) => {
@@ -98,7 +115,7 @@ const AddPurchaseItems = () => {
     }],
     PurchaseDate: null,
     shopId: '',
-    shopSearch:''
+    shopSearch: ''
   };
 
   // Debounced shop search
@@ -148,11 +165,11 @@ const AddPurchaseItems = () => {
   );
 
 
-  const handleProductSearch = (query, index, values,setFieldValue,productName) => {
+  const handleProductSearch = (query, index, values, setFieldValue, productName) => {
     const updatedItems = [...values.items];
     // console.log('updatedItems==',query, updatedItems)
     updatedItems[index].productName = query;
-    setFieldValue({...values,items:updatedItems})
+    setFieldValue({ ...values, items: updatedItems })
     handleProductSearchDebounced(query, index);
   };
 
@@ -160,8 +177,8 @@ const AddPurchaseItems = () => {
   const handleShopSelect = (shop, setFieldValue, shopId) => {
     // setShopSearch(shop.name);
     setShopId(shop._id);
-    setFieldValue('shopId',shop._id)
-    setFieldValue('shopSearch',shop.name)
+    setFieldValue('shopId', shop._id)
+    setFieldValue('shopSearch', shop.name)
     setShopSuggestions([]);
   };
 
@@ -174,7 +191,7 @@ const AddPurchaseItems = () => {
     updatedItems[index].MeasuringUnit = product.MeasuringUnit.Name;
     updatedItems[index].MultiplyingQty = product.MeasuringUnit.Description;
     // setItems(updatedItems);
-    setFieldValue({...values, items:updatedItems})
+    setFieldValue({ ...values, items: updatedItems })
     setProductSuggestions((prev) => ({
       ...prev,
       [index]: [],
@@ -182,24 +199,23 @@ const AddPurchaseItems = () => {
   };
 
   // Add a new row
-    const handleAddItem = (setFieldValue, values) => {
-      const newItem = { 
-        productId: '', 
-        quantity: '', 
-        price: '', 
-        productName: '', 
-        expiryDate: null, 
-        MeasuringUnit: '',
-        MUQ: 0,
-        PricePerUnit: 0,
-        PricePerMeasuringUnit: 0,
-        TotalPrice: 0
-      };
-    
-      // Ensure the array updates correctly
-      setFieldValue('items', [...values.items, newItem]);
-    }; 
-  
+  const handleAddItem = (setFieldValue, values) => {
+    const newItem = {
+      productId: '',
+      quantity: '',
+      price: '',
+      productName: '',
+      expiryDate: null,
+      MeasuringUnit: '',
+      MUQ: 0,
+      PricePerUnit: 0,
+      PricePerMeasuringUnit: 0,
+      TotalPrice: 0
+    };
+
+    // Ensure the array updates correctly
+    setFieldValue('items', [...values.items, newItem]);
+  };
 
   // Remove a row
   const handleRemoveItem = (index, values, setFieldValue) => {
@@ -209,21 +225,28 @@ const AddPurchaseItems = () => {
   };
 
   // Submit the purchase order
-  const handleSubmit = async (values,{resetForm}) => {
+  const handleSubmit = async (values, { resetForm }) => {
     try {
       // resetForm()
-      const {items, PurchaseDate, shopId} = values;
+      const { items, PurchaseDate, shopId } = values;
       console.log('handleSubmit items--', items, PurchaseDate, shopId)
       const response = await api.post('/PurchaseOrder/Add', { shopId, products: items, PurchaseDate });
       if (response.data.success) {
-        enqueueSnackbar('Purchase order created successfully!', { variant: 'success' });
         resetForm()
         setItems([{ productId: '', quantity: '', price: '', productName: '', expiryDate: null }]); // Reset form
         setShopSearch('');
         setShopId('');
+        dispatch({
+          type: SET_NOTIFICATION,
+          payload: {
+            open: true,
+            message: "Purchase data submitted successfully!",
+            severity: "success",
+          }
+        })
       } else {
         enqueueSnackbar(response.data.error, { variant: 'error' });
-      } 
+      }
     } catch (error) {
       enqueueSnackbar('An error occurred. Please try again later.', { variant: 'error' });
     }
@@ -319,7 +342,7 @@ const AddPurchaseItems = () => {
     updatedItems[index].expiryDate = date;
     setFieldValue('items', updatedItems)
   }
-  
+
   const navigation = (page) => {
     router.push(`/${page}`);
   };
@@ -331,92 +354,121 @@ const AddPurchaseItems = () => {
       onSubmit={handleSubmit}
     >
       {({ isSubmitting, values, setValues, setFieldValue, resetForm }) => (
-        <Form>
-          <Container maxWidth="lg" style={{ padding: '10px' }}>
+        <Form style={{ backgroundColor: 'pink' }}>
+          <Container maxWidth={false} sx={{ padding: '10px', backgroundColor: '#fff' }}>
 
-            <Grid
-              container
-              // justifyContent="flex-end"
-              // spacing={2}
-              style={{ marginTop: '0px', position: 'sticky', bottom: 0, background: '#fff', zIndex: 2 }}
-            >
-              <Grid style={{ flexDirection: 'row', display: 'flex', gap: 5 }}>
+            {/* <Box style={{ marginTop: '0px', position: 'sticky', bottom: 0, background: '#fff', zIndex: 2 }} > */}
+            <Grid style={{ flexDirection: 'row', display: 'flex', gap: 5, justifyContent: 'space-between', alignItems: 'center' }}>
+              <Box>
                 <Typography variant="h4" gutterBottom>
                   Add Purchase Items
                 </Typography>
-                <Grid style={{ display: 'flex', flexDirection: 'row', gap: 2 }}>
-                  <Grid item>
-                    <Button onClick={() => navigation('/product/add')} variant="contained" color="primary">
-                      ADD PRODUCT
-                    </Button>
-                  </Grid>
-                  <Grid item>
-                    <Button onClick={() => navigation('MeasuringUnit/add')} variant="contained" color="success">
-                      ADD MEASURING UNIT
-                    </Button>
-                  </Grid>
-                  <Grid item>
-                    <Button onClick={() => navigation('ProductCompany/Add')} variant="contained" color="success">
-                      ADD COMPANY
-                    </Button>
-                  </Grid>
-                  <Grid item>
-                    <Button onClick={() => navigation('shop/add')} variant="contained" color="success">
-                      ADD SHOP
-                    </Button>
-                  </Grid>
+              </Box>
+              <Grid style={{ display: 'flex', flexDirection: 'row', gap: 2 }}>
+                <Grid item>
+                  <Button onClick={() => navigation('/product/add')} variant="contained" color="primary">
+                    ADD PRODUCT
+                  </Button>
+                </Grid>
+                <Grid item>
+                  <Button onClick={() => navigation('MeasuringUnit/add')} variant="contained" color="success">
+                    ADD MEASURING UNIT
+                  </Button>
+                </Grid>
+                <Grid item>
+                  <Button onClick={() => navigation('ProductCompany/Add')} variant="contained" color="success">
+                    ADD COMPANY
+                  </Button>
+                </Grid>
+                <Grid item>
+                  <Button onClick={() => navigation('shop/add')} variant="contained" color="success">
+                    ADD SHOP
+                  </Button>
                 </Grid>
               </Grid>
+
             </Grid>
+            {/* </Box> */}
 
             {/* Shop Selection */}
-            <Grid container spacing={2} alignItems="center" sx={{display:'flex', flexDirection:'row'}}>
-              <Grid item xs={6} ref={shopRef}>
-                <TextField
-                  label="Search Shop"
-                  fullWidth
-                  size='small'
-                  value={values.shopSearch}
-                  onChange={(e) => handleShopSearch(e.target.value, values, setFieldValue)}
-                  helperText="Start typing to search for shops"
-                />
-                {/* {renderTextFieldSmall("shopSearch", "Search Shop", 'text', null, false, null, (e) => handleShopSearch(e.target.value))} */}
-                {shopSuggestions.length > 0 && (
-                  <Paper style={{ position: 'absolute', zIndex: 10, maxHeight: '150px', overflowY: 'auto', width: '100%' }}>
-                    <List>
-                      {shopSuggestions.map((shop) => (
-                        <ListItem key={shop._id} button onClick={() => handleShopSelect(shop, setFieldValue, shopId)}>
-                          <ListItemText primary={shop.name} secondary={`${shop.address?.city || ''}, ${shop.address?.state || ''}`} />
-                        </ListItem>
-                      ))}
-                    </List>
-                  </Paper>
-                )}
+            <Grid container spacing={2}>
+              <Grid item size={{ xs: 6, md: 8, lg: 4 }} ref={shopRef}>
+                <Box sx={{ position: 'relative', width: '100%' }}>
+                  <TextField
+                    label="Search Shop"
+                    fullWidth
+                    size='small'
+                    value={values.shopSearch}
+                    onChange={(e) => handleShopSearch(e.target.value, values, setFieldValue)}
+                    // helperText="Start typing to search for shops"
+                  />
+                  {shopSuggestions.length > 0 && (
+                    <Paper
+                    style={{
+                      position: 'absolute',
+                      zIndex: 10,
+                      maxHeight: '250px',
+                      overflowY: 'auto',
+                      width: '100%', // Ensures it takes the same width as the TextField
+                    }}
+                      >
+                      <List>
+                        {shopSuggestions.map((shop) => (
+                          <ListItem key={shop._id} button onClick={() => handleShopSelect(shop, setFieldValue, shopId)}>
+                            <ListItemText primary={shop.name} secondary={`${shop.address?.city || ''}, ${shop.address?.state || ''}`} />
+                          </ListItem>
+                        ))}
+                      </List>
+                    </Paper>
+                  )}
+                </Box>
               </Grid>
 
-              <Grid item size='small' style={{height:'35px'}} >                
-                <LocalizationProvider size='small' dateAdapter={AdapterDayjs}>
+              <Grid item xs={6} md={4} lg={3}>
+                <LocalizationProvider dateAdapter={AdapterDayjs}>
                   <DatePicker
                     label="Purchase Date"
                     value={values.PurchaseDate}
-                    size='small'
-                    style={{height:'35px'}}
-                    onChange={(date) => {
-                      setValues({...values, PurchaseDate:date})
-                      console.log('date---', date.toISOString())
+                    onChange={(date) => setValues({ ...values, PurchaseDate: date })}
+                    slotProps={{
+                      textField: {
+                        fullWidth: true,
+                        variant: "outlined",
+                        size: "small", // ✅ Ensures smaller text field
+                      },
                     }}
-                    renderInput={(params) => 
-                    <TextField {...params} 
-                    size="small" // ✅ Ensures compact size                    
-                    fullWidth 
-                    style={{height:'35px'}}
-                    />
-                  }
+
                   />
                 </LocalizationProvider>
               </Grid>
+
             </Grid>
 
+            {/* Snackbar component */}
+            <Snackbar
+              open={notification.open}
+              autoHideDuration={2000}
+              onClose={handleCloseNotification}
+              anchorOrigin={{ vertical: "top", horizontal: "center" }}
+            >
+              <Alert
+                onClose={handleCloseNotification}
+                severity={notification.severity}
+                sx={{
+                  width: "100%",
+                  ...(notification.severity === "success" && {
+                    bgcolor: green[600],
+                    "& .MuiAlert-icon": {
+                      color: "#fff",
+                    },
+                  }),
+                }}
+                variant="filled"
+              >
+                {notification.message}
+              </Alert>
+            </Snackbar>
+            
             {/* Product Selection */}
             <Table style={{ marginTop: '20px', tableLayout: 'fixed' }}>
               <TableHead>
@@ -440,7 +492,7 @@ const AddPurchaseItems = () => {
                         label="Search Product"
                         fullWidth
                         value={item.productName}
-                        onChange={(e) => handleProductSearch(e.target.value, index, values,setFieldValue,'productName')}
+                        onChange={(e) => handleProductSearch(e.target.value, index, values, setFieldValue, 'productName')}
                       />
                       {productSuggestions[index]?.length > 0 && (
                         <Paper
@@ -454,7 +506,7 @@ const AddPurchaseItems = () => {
                         >
                           <List>
                             {productSuggestions[index].map((product) => (
-                              <ListItem key={product._id} button onClick={() => handleProductSelect(product, index, values,setFieldValue)}>
+                              <ListItem key={product._id} button onClick={() => handleProductSelect(product, index, values, setFieldValue)}>
                                 <ListItemText primary={product.Name} secondary={`Price: ${product.Price}`} />
                               </ListItem>
                             ))}
@@ -537,7 +589,7 @@ const AddPurchaseItems = () => {
                         <DatePicker
                           label="Expiry Date"
                           value={item.expiryDate}
-                          onChange={(date) => expiryDateChange(date,index, values, setFieldValue)}
+                          onChange={(date) => expiryDateChange(date, index, values, setFieldValue)}
                           renderInput={(params) => <TextField {...params} fullWidth />}
                         />
                       </LocalizationProvider>
@@ -560,7 +612,7 @@ const AddPurchaseItems = () => {
               style={{ marginTop: '20px', position: 'sticky', bottom: 0, background: '#fff', zIndex: 2 }}
             >
               <Grid item>
-                <Button onClick={()=>handleAddItem(setFieldValue, values)} variant="contained" color="primary">
+                <Button onClick={() => handleAddItem(setFieldValue, values)} variant="contained" color="primary">
                   Add Item
                 </Button>
               </Grid>

@@ -1,4 +1,5 @@
-import {GET_PERMISSION_SUCESS, SET_NOTIFICATION, SPINNER_STATUS_REQUESTED} from '../../../constants';
+import {GET_PERMISSION_SUCESS, GET_ROLE_SUCESS, SET_NOTIFICATION, SPINNER_STATUS_REQUESTED} from '../../../constants';
+import {goBack} from '../../../utils/navigation';
 
 const initialState = {
     SpinnerStatus: false,
@@ -9,6 +10,9 @@ const initialState = {
     },
     permissions:{
         PermissionList:[]
+    },
+    roles:{
+        RolesList:[]
     }
 }
 
@@ -19,13 +23,18 @@ export const Common_Data = (state = initialState, action) => {
             return {...state, SpinnerStatus:action.payload}
 
         case SET_NOTIFICATION:
-            console.log('SET_NOTIFICATION payload--', action.payload)
+            console.log('SET_NOTIFICATION payload--', action.payload)  
             return {...state, notification:action.payload}
 
         case GET_PERMISSION_SUCESS:
             console.log('GET_PERMISSION_SUCESS payload--', action.payload)
             return{...state, permissions:{...state.permissions, PermissionList:action.payload.permissions, Pagination:action.payload.pagination}}
-        default:
+        
+        case GET_ROLE_SUCESS:
+            console.log('GET_ROLE_SUCESS payload--', action.payload)
+            return{...state, roles:{...state.roles, RolesList:action.payload.roles, Pagination:action.payload.pagination}}
+
+            default:
             return state;
     }
 }

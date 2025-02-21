@@ -4,8 +4,8 @@ import React, { useState, useCallback, useEffect, useRef } from 'react';
 import {
   TextField,
   Button,
-  Grid,
   Box,
+  Alert,
   Table,
   TableBody,
   TableCell,
@@ -17,29 +17,33 @@ import {
   List,
   ListItem,
   ListItemText,
-  Grid2,
+  Snackbar
 } from '@mui/material';
 import { useSnackbar } from 'notistack';
-import axios from '../../../../components/axios';
 import debounce from 'lodash/debounce';
 import { LocalizationProvider } from '@mui/x-date-pickers';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
-import { Get_Products } from '../../../../services/page/Product';
 import { Formik, Form } from "formik";
 import * as Yup from "yup";
-import { renderTextFieldSmall } from '../../../../components/TextField';
 import withAuth from '../../../../hoc/withAuth';
 import { useRouter } from "next/navigation";
 import api from '../../../../services/api';
+import { useDispatch, useSelector } from 'react-redux';
+import { SET_NOTIFICATION } from '../../../../constants';
+import { Set_Notification } from '../../../../services/page/common';
+import { green } from "@mui/material/colors";
+import Grid from '@mui/material/Grid2';
 
 const SalesOrder = () => {
+  const dispatch = useDispatch();
   const shopRef = useRef(null);
   const productRef = useRef(null);
   const router = useRouter();
   const [productSuggestions, setProductSuggestions] = useState({});
   const [customerSuggestions, setCustomerSuggestions] = useState([]);
   const { enqueueSnackbar } = useSnackbar();
+  const notification = useSelector((store) => store.Common_Data.notification);
 
   // validationSchema
   const validationSchema = Yup.object().shape({
@@ -58,6 +62,17 @@ const SalesOrder = () => {
     // ),
   });
 
+  const handleCloseNotification = (event, reason) => {
+    if (reason === "clickaway") {
+      return;
+    }
+    Set_Notification({
+      open: false,
+      message: '',
+      severity: ''
+    })
+  };
+
   // Function to close suggestions when clicking outside
   const handleClickOutside = (event) => {
     if (shopRef.current && !shopRef.current.contains(event.target)) {
@@ -67,6 +82,7 @@ const SalesOrder = () => {
       setCustomerSuggestions([]); // Clear product suggestions
     }
   };
+
 
   useEffect(() => {
     // Attach event listener
@@ -82,7 +98,7 @@ const SalesOrder = () => {
     CustomerName: '',
     CustomerId: '',
     SalesDate: null,
-    isAddNewCustomer:false
+    isAddNewCustomer: false
   };
 
   // Debounced shop search
@@ -105,7 +121,7 @@ const SalesOrder = () => {
   );
 
   const handleCustomerSearch = (query, values, setFieldValue) => {
-    setFieldValue('CustomerName',query)
+    setFieldValue('CustomerName', query)
     handleCustomerSearchDebounced(query);
   };
 
@@ -116,36 +132,36 @@ const SalesOrder = () => {
     setFieldValue('CustomerId', customer._id)
     setFieldValue('customerName', customer.name)
     setCustomerSuggestions([]);
-    console.log('customer==',customer)
+    console.log('customer==', customer)
   };
 
-    // Debounced product search
-    const handleProductSearchDebounced = useCallback(
-      debounce(async (query, index) => {
-        if (!query.trim() || query.length <= 2) return;
-  
-        try {
-          const res = await api.get('/Product/SearchProduct', {
-            params: { q: query, page: 1, limit: 10 },
-          });
-  
-          setProductSuggestions((prev) => ({
-            ...prev,
-            [index]: res?.data?.products || [],
-          }));
-        } catch (error) {
-          enqueueSnackbar('Failed to fetch products.', { variant: 'error' });
-        }
-      }, 300),
-      [enqueueSnackbar]
-    );
+  // Debounced product search
+  const handleProductSearchDebounced = useCallback(
+    debounce(async (query, index) => {
+      if (!query.trim() || query.length <= 2) return;
 
-    
-  const handleProductSearch = (query, index, values,setFieldValue,productName) => {
+      try {
+        const res = await api.get('/Product/SearchProduct', {
+          params: { q: query, page: 1, limit: 10 },
+        });
+
+        setProductSuggestions((prev) => ({
+          ...prev,
+          [index]: res?.data?.products || [],
+        }));
+      } catch (error) {
+        enqueueSnackbar('Failed to fetch products.', { variant: 'error' });
+      }
+    }, 300),
+    [enqueueSnackbar]
+  );
+
+
+  const handleProductSearch = (query, index, values, setFieldValue, productName) => {
     const updatedItems = [...values.items];
     // console.log('updatedItems==',query, updatedItems)
     updatedItems[index].productName = query;
-    setFieldValue({...values,items:updatedItems})
+    setFieldValue({ ...values, items: updatedItems })
     handleProductSearchDebounced(query, index);
   };
 
@@ -160,7 +176,7 @@ const SalesOrder = () => {
     updatedItems[index].TotalStockQuantity = product.TotalStockQuantity
     updatedItems[index].PriceAtAddTime = product.Price
     // setItems(updatedItems);
-    setFieldValue({...values, items:updatedItems})
+    setFieldValue({ ...values, items: updatedItems })
     setProductSuggestions((prev) => ({
       ...prev,
       [index]: [],
@@ -196,24 +212,28 @@ const SalesOrder = () => {
   // Submit the purchase order
   const handleSubmit = async (values, { resetForm }) => {
     try {
-      // resetForm()
       const { items, SalesDate, CustomerName, CustomerId } = values;
       console.log('handleSubmit==', values)
-      const Cart = items.map((item) => 
-        ({
-          "ProductId":item.productId,
-          "Quantity":item.quantity,
-          "PriceAtAddTime":item.PriceAtAddTime
-        })
+      const Cart = items.map((item) =>
+      ({
+        "ProductId": item.productId,
+        "Quantity": item.quantity,
+        "PriceAtAddTime": item.PriceAtAddTime
+      })
       );
       console.log('handleSubmit items--', Cart, SalesDate)
       const response = await api.post('/SalesOrder', { CustomerName, Cart, SalesDate, CustomerId });
       if (response.data.success) {
-        enqueueSnackbar('Sales order created successfully!', { variant: 'success' });
         resetForm()
-        // setItems([{ productId: '', quantity: '', price: '', productName: '', expiryDate: null }]); // Reset form
-        // setShopSearch('');
-        // setShopId('');
+        dispatch({
+          type: SET_NOTIFICATION,
+          payload: {
+            open: true,
+            message: "Sales data submitted successfully!",
+            severity: "success",
+          }
+        })
+
       } else {
         enqueueSnackbar(response.data.error, { variant: 'error' });
       }
@@ -324,15 +344,12 @@ const SalesOrder = () => {
     >
       {({ isSubmitting, values, setValues, setFieldValue, resetForm }) => (
         <Form>
-          <Box style={{ padding: '10px' }}>
+          <Container maxWidth={false} sx={{ padding: '10px', backgroundColor: '#fff' }}>
 
             <Box
               container
-              // justifyContent="flex-end"
-              // spacing={2}
               fullWidth
-            // style={{marginY:'5px'}}
-            // style={{ marginTop: '0px', position: 'sticky', bottom: 0, background: '#ccc', zIndex: 2, justifyContent:'space-between', display:'flex' }}
+              style={{ marginBottom: '15px', alignItems: 'center', backgroundColor: '#fff' }}
             >
               <Box sx={{
                 flexDirection: 'row', display: 'flex', gap: 15, justifyContent: 'space-between',
@@ -367,55 +384,83 @@ const SalesOrder = () => {
             </Box>
 
             {/* Shop Selection */}
-            <Grid container spacing={2} alignItems="center" sx={{ display: 'flex', flexDirection: 'row', marginTop: '15px' }}>
-              <Grid item xs={6} ref={shopRef}>
-                <TextField
-                  label="Search Customer"
-                  fullWidth
-                  size='small'
-                  value={values.customerName}
-                  onChange={(e) => handleCustomerSearch(e.target.value, values, setFieldValue)}
-                  helperText="Start typing to search for customer"
-                />
-                {/* {renderTextFieldSmall("shopSearch", "Search Shop", 'text', null, false, null, (e) => handleShopSearch(e.target.value))} */}
-                {customerSuggestions.length > 0 && (
-                  <Paper style={{ position: 'absolute', zIndex: 10, maxHeight: '150px', overflowY: 'auto', width: '100%' }}>
-                    <List>
-                      {customerSuggestions.map((customer) => (
-                        <ListItem key={customer._id} button onClick={() => handleCustomerSelect(customer, setFieldValue)}>
-                          <ListItemText
-                            primary={customer.name}
+            <Grid container spacing={2}>
+              <Grid item
+                size={{ xs: 4, md: 6, lg: 4 }}
+                ref={shopRef}
+              >
+                <Box sx={{ position: 'relative', width: '100%' }}>
+                  <TextField
+                    label="Search Customer"
+                    fullWidth
+                    size='small'
+                    value={values.customerName}
+                    onChange={(e) => handleCustomerSearch(e.target.value, values, setFieldValue)}
+                    helperText="Start typing to search for customer"
+                  />
+                  {/* {renderTextFieldSmall("shopSearch", "Search Shop", 'text', null, false, null, (e) => handleShopSearch(e.target.value))} */}
+                  {customerSuggestions.length > 0 && (
+                    <Paper style={{ position: 'absolute', zIndex: 10, maxHeight: '150px', overflowY: 'auto', width: '100%' }}>
+                      <List>
+                        {customerSuggestions.map((customer) => (
+                          <ListItem key={customer._id} button onClick={() => handleCustomerSelect(customer, setFieldValue)}>
+                            <ListItemText
+                              primary={customer.name}
                             // secondary={`${shop.address?.city || ''}, ${shop.address?.state || ''}`}
-                          />
-                        </ListItem>
-                      ))}
-                    </List>
-                  </Paper>
-                )}
+                            />
+                          </ListItem>
+                        ))}
+                      </List>
+                    </Paper>
+                  )}
+                </Box>
               </Grid>
 
-              <Grid item size='small' style={{ height: '35px' }} >
+              <Grid item xs={6} md={4} lg={3}>
                 <LocalizationProvider size='small' dateAdapter={AdapterDayjs}>
                   <DatePicker
                     label="Sales Date"
                     value={values.SalesDate}
-                    size='small'
-                    style={{ height: '35px' }}
                     onChange={(date) => {
                       setValues({ ...values, SalesDate: date })
                       console.log('date---', date.toISOString())
                     }}
-                    renderInput={(params) =>
-                      <TextField {...params}
-                        size="small" // ✅ Ensures compact size                    
-                        fullWidth
-                        style={{ height: '35px' }}
-                      />
-                    }
+                    slotProps={{
+                      textField: {
+                        fullWidth: true,
+                        variant: "outlined",
+                        size: "small", // ✅ Ensures smaller text field
+                      },
+                    }} s
                   />
                 </LocalizationProvider>
               </Grid>
             </Grid>
+
+            {/* Snackbar component */}
+            <Snackbar
+              open={notification.open}
+              autoHideDuration={2000}
+              onClose={handleCloseNotification}
+              anchorOrigin={{ vertical: "top", horizontal: "center" }}
+            >
+              <Alert
+                onClose={handleCloseNotification}
+                severity={notification.severity}
+                sx={{
+                  width: "100%",
+                  ...(notification.severity === "success" && {
+                    bgcolor: green[600],
+                    "& .MuiAlert-icon": {
+                      color: "#fff",
+                    },
+                  }),
+                }}
+                variant="filled"
+              >
+                {notification.message}
+              </Alert>
+            </Snackbar>
 
             {/* Product Selection */}
             <Table style={{ marginTop: '20px', tableLayout: 'fixed' }}>
@@ -556,7 +601,7 @@ const SalesOrder = () => {
                 </Button>
               </Grid>
             </Grid>
-          </Box>
+          </Container>
         </Form>
       )}
     </Formik>

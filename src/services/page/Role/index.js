@@ -10,7 +10,7 @@ export const Get_Role = (data) => {
     dispatch({
         type: GET_ROLE_REQUESTED,
         payload: {
-            API_SUFFIX: `permission/SearchPermission`,
+            API_SUFFIX: `role/SearchRole`,
             data
         }
     });

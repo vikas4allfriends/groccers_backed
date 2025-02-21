@@ -27,13 +27,13 @@ import { green } from "@mui/material/colors";
 import {useSelector} from 'react-redux';
 import AddProductCss from "../../../../css/AddProductCss";
 import {Set_Notification} from '../../../../services/page/common';
-import {Add_Product_Category} from '../../../../services/page/ProductCategory';
+import {Add_Permission} from '../../../../services/page/Permission';
 import {renderTextFieldSmall} from '../../../../components/TextField';
 
 // validationSchema
 const validationSchema = Yup.object().shape({
-  Name: Yup.string().required('Name is required field'),
-  Description: Yup.string().optional().nullable()
+  name: Yup.string().required('Name is required field'),
+  description: Yup.string().optional().nullable()
 });
 
 const AddPermission = ({ drawerWidth }) => {
@@ -65,7 +65,7 @@ const AddPermission = ({ drawerWidth }) => {
 
   const initialValues = {
     name:'', 
-    description:null,
+    description:'',
   };
 
 
@@ -73,7 +73,7 @@ const AddPermission = ({ drawerWidth }) => {
   
       // Log form values before sending
       console.log("Form values being sent: ", values);
-      Add_Product_Category(values,resetForm)
+      Add_Permission(values,resetForm)
   }
 
   return (

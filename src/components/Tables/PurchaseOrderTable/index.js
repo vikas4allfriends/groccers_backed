@@ -13,14 +13,18 @@ import {
   Typography,
 } from "@mui/material";
 import VisibilityIcon from "@mui/icons-material/Visibility";
+import PrintIcon from "@mui/icons-material/Print";
 import ProductTableCss from "../../../css/ProductTableCss";
 import { Get_Purchase_Order } from "../../../services/page/PurchaseOrder";
 import { useSelector, useDispatch } from "react-redux";
+import PurchaseOrderReceipt from '../../../components/PrintReceipt/PurchaseOrderReceipt';
 
 function ProductTable() {
   const theme = useTheme();
   const styles = ProductTableCss(theme);
   const dispatch = useDispatch();
+  const [openReceipt, setOpenReceipt] = useState(false);
+  const [selectedOrder, setSelectedOrder] = useState(null);
   const [page, setPage] = useState(1); // Track the current page
   const [loading, setLoading] = useState(false);
   const [hasMore, setHasMore] = useState(true);
@@ -28,6 +32,12 @@ function ProductTable() {
   const PurchaseOrder = useSelector((store) => store.Product_Data.PurchaseOrder);
   const { orders, totalRecords } = PurchaseOrder;
   const data = orders;
+
+  const handleViewReceipt = (order) => {
+    setSelectedOrder(order);
+    setOpenReceipt(true);
+  };
+
   useEffect(() => {
     fetchPurchaseOrders(page);
   }, [page]);
@@ -115,6 +125,11 @@ function ProductTable() {
                       <VisibilityIcon />
                     </IconButton>
                   </TableCell>
+                  <TableCell>
+                <IconButton onClick={() => handleViewReceipt(row)}>
+                  <PrintIcon />
+                </IconButton>
+              </TableCell>
                 </TableRow>
               ))
             ) : (
@@ -139,6 +154,14 @@ function ProductTable() {
           Load More +
         </Button>
       </Box>
+
+      {/* Receipt Modal */}
+      <PurchaseOrderReceipt
+        open={openReceipt}
+        onClose={() => setOpenReceipt(false)}
+        order={selectedOrder}
+      />
+
     </>
   );
 }

@@ -13,16 +13,28 @@ import {
   useTheme,
   Typography,
 } from "@mui/material";
-import VisibilityIcon from "@mui/icons-material/Visibility";
+import DeleteOutlineOutlinedIcon from '@mui/icons-material/DeleteOutlineOutlined';
+import UpdateIcon from '@mui/icons-material/Update';
 import ProductTableCss from "../../../css/ProductTableCss";
-import { Get_Measurment_Unit } from "../../../services/page/MeasurmentUnit";
-import {useSelector} from 'react-redux';
+import { Get_Measurment_Unit, Delete_Measurment_Unit } from "../../../services/page/MeasurmentUnit";
+import { useSelector } from 'react-redux';
+import { useRouter } from "next/navigation"; // Import router
 
 function MeasurmentUnitTable() {
   const theme = useTheme();
   const styles = ProductTableCss(theme);
   // const [data, setData] = useState([]);
-  const data = useSelector((store)=>store.Product_Data.measurmentUnit)
+  const data = useSelector((store) => store.Product_Data.measurmentUnit)
+  const router = useRouter();
+
+  const handleUpdateClick = (unit) => {
+    router.push(`/MeasuringUnit/add?edit=${unit._id}`); // Navigate with query param
+  };
+
+  const handleDeleteClick = (unit) => {
+    Delete_Measurment_Unit({id:unit._id})
+  };
+
   console.log('measuringUnitData==', data)
   useEffect(() => {
     Get_Measurment_Unit();
@@ -41,7 +53,7 @@ function MeasurmentUnitTable() {
           </TableHead>
           <TableBody>
             {data.map((row, index) => (
-              <TableRow sx={styles.tableRow} key={index}>                
+              <TableRow sx={styles.tableRow} key={index}>
                 <TableCell sx={styles.tableCell}>
                   {row.Name}
                 </TableCell>
@@ -49,9 +61,14 @@ function MeasurmentUnitTable() {
                   {row.Description}
                 </TableCell>
                 <TableCell sx={styles.tableCell}>
-                  <IconButton size="small">
-                    <VisibilityIcon />
+                  <IconButton size="small" onClick={() => handleUpdateClick(row)}>                    
+                    <UpdateIcon />
                   </IconButton>
+
+                  <IconButton size="small" onClick={() => handleDeleteClick(row)}>                    
+                    <DeleteOutlineOutlinedIcon color='danger' sx={{color:'red'}} />
+                  </IconButton>
+
                 </TableCell>
               </TableRow>
             ))}

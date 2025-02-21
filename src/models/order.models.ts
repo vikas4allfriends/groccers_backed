@@ -48,9 +48,19 @@ const OrderSchema = new mongoose.Schema(
             required: true,
             unique: true,
         },
-        UserId: {
+        // UserId: {
+        //     type: mongoose.Schema.Types.ObjectId,
+        //     ref: 'User',
+        //     required: true,
+        // },
+        CustomerRefId: {
             type: mongoose.Schema.Types.ObjectId,
-            ref: 'User',
+            required: true,
+            refPath: 'CustomerType', // Dynamic reference
+        },
+        CustomerType: {
+            type: String,
+            enum: ['User', 'Customer'], // 'User' for mobile users, 'Guest' for store purchases
             required: true,
         },
         Items: {
@@ -73,6 +83,7 @@ const OrderSchema = new mongoose.Schema(
             type: Boolean,
             default: false,
         },
+        SalesDate: { type: Date, default: Date.now },
         OrderStatus: {
             type: String,
             enum: ['Pending', 'Confirmed', 'Shipped', 'Cancelled'],

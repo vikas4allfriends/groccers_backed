@@ -3,19 +3,18 @@
 import { useRouter } from "next/navigation";
 import { Typography, Box, Grid, Button, useTheme } from "@mui/material";
 import AddIcon from "@mui/icons-material/Add";
-
 import SearchBox from "../../../../components/SearchBox";
 
 import ProductCss from "../../../../css/ProductCss";
-import RoleTable from "../../../../components/Tables/RoleTable";
+import SalesOrderTable from "../../../../components/Tables/SalesOrderTable";
 
-const Role_Dashboard = ({ drawerWidth }) => {
+const SalesOrder = ({ drawerWidth }) => {
     const router = useRouter();
     const theme = useTheme();
     const styles = ProductCss(theme);
 
-    const handleRolesClick = () => {
-        router.push("/Role/Add");
+    const handleAddSalesClick = () => {
+        router.push("/salesOrder/add");
     };
 
     return (
@@ -32,17 +31,17 @@ const Role_Dashboard = ({ drawerWidth }) => {
                 {/*  Header Section */}
                 <Box sx={styles.headingBox}>
                     <Typography variant="body1" sx={styles.pageTitle}>
-                        Roles Management
+                        Sales Order Management
                     </Typography>
 
                     <Box sx={styles.actionBox}>
                         <Button
                             variant="outlined"
                             startIcon={<AddIcon />}
-                            onClick={handleRolesClick}
+                            onClick={handleAddSalesClick}
                             sx={styles.addButton}
                         >
-                            Add Roles
+                            Add Purchase Order
                         </Button>
 
                         <Box
@@ -60,7 +59,7 @@ const Role_Dashboard = ({ drawerWidth }) => {
                 <Grid container spacing={3}>
                     <Grid item xs={12}>
                         {/* Table content */}
-                        <RoleTable />
+                        <SalesOrderTable />
                     </Grid>
                 </Grid>
             </Box>
@@ -68,4 +67,4 @@ const Role_Dashboard = ({ drawerWidth }) => {
     );
 };
 
-export default Role_Dashboard;
+export default SalesOrder;
