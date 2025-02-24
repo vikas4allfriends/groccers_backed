@@ -1,6 +1,6 @@
 'use client'
 
-import React from "react";
+import React, { useEffect, useState } from "react";
 
 import { useRouter } from "next/navigation";
 import { Formik, Form, Field } from "formik";
@@ -21,14 +21,13 @@ import {
   Card,
 } from "@mui/material";
 import KeyboardBackspaceIcon from "@mui/icons-material/KeyboardBackspace";
-import Visibility from "@mui/icons-material/Visibility";
-import VisibilityOff from "@mui/icons-material/VisibilityOff";
 import { green } from "@mui/material/colors";
 import {useSelector} from 'react-redux';
 import AddProductCss from "../../../../css/AddProductCss";
 import {Set_Notification} from '../../../../services/page/common';
-import {Add_Permission} from '../../../../services/page/Permission';
+import {Add_Permission, Update_Permission} from '../../../../services/page/Permission';
 import {renderTextFieldSmall} from '../../../../components/TextField';
+import { useSearchParams } from "next/navigation"; // Import search params
 
 // validationSchema
 const validationSchema = Yup.object().shape({
@@ -40,6 +39,11 @@ const AddPermission = ({ drawerWidth }) => {
   const theme = useTheme();
   const styles = AddProductCss(theme);
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const editId = searchParams.get("edit"); // Get the ID from URL
+  // const unitData = router.state?.unitData || null; // Retrieve data from router
+  const PermissionList  = useSelector((store) => store.Common_Data.permissions.PermissionList)
+
 
   //all the state and handler functions
   const notification = useSelector((store)=> store.Common_Data.notification)
@@ -63,25 +67,41 @@ const AddPermission = ({ drawerWidth }) => {
     router.push("/Permission/Dashboard");
   };
 
-  const initialValues = {
+  const [initialValues, setInitialValues] = useState({
     name:'', 
     description:'',
+  });
+
+
+  const onSubmit = async (values, {resetForm}) => {
+    if (editId) {
+      Update_Permission({data:values, id:editId, modelName:'UserPermissions'}); // Update API
+    } else {
+      Add_Permission(values, resetForm); // Create API
+    }
   };
 
-
-  const onSubmit = async (values, { setSubmitting, resetForm }) => {
-  
-      // Log form values before sending
-      console.log("Form values being sent: ", values);
-      Add_Permission(values,resetForm)
-  }
-
+    useEffect(() => {
+      if (editId) {
+        const permissionData = PermissionList.find((permission) => permission._id === editId);
+        console.log('unitData==',permissionData)
+        if (permissionData) {
+          setInitialValues({
+            ...initialValues,
+            name: permissionData.name,
+            description: permissionData.description,
+          });
+        }
+      }
+    }, [editId, PermissionList]);
+    console.log('initialValues==',initialValues)
   return (
     <Box drawerwidth={drawerWidth} sx={styles.mainContainer}>
       <Formik
         initialValues={initialValues}
         validationSchema={validationSchema}
         onSubmit={onSubmit}
+        enableReinitialize={true}
       >
         {({ isSubmitting }) => (
           <Form>
@@ -97,7 +117,10 @@ const AddPermission = ({ drawerWidth }) => {
                   <KeyboardBackspaceIcon />
                 </Button>
                 {/* topHeading */}
-                <Typography sx={styles.topHeading}>Add Permission</Typography>
+                {/* <Typography sx={styles.topHeading}>Add Permission</Typography> */}
+                <Typography sx={styles.topHeading}>
+                  {editId ? "Update Permission" : "Add Permission"}
+                </Typography>
               </Box>
 
               {/* ButtonBox */}

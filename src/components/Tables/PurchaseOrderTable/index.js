@@ -48,7 +48,7 @@ function ProductTable() {
     setLoading(true);
     const params = {
       page: currentPage, // Current page
-      limit: 5, // Number of orders per page
+      limit: 10, // Number of orders per page
       // sortField: 'TotalPrice', // Sort field
       // sortOrder: 'asc',    // Sort order
       // ShopId: '64e12abc4567890d12345ef', // Shop ID (optional)
@@ -76,7 +76,7 @@ function ProductTable() {
 
   return (
     <>
-      <Paper sx={styles.tableContainer}>
+      <Paper sx={[styles.tableContainer, ]}>
         <Table aria-label="purchase orders table">
           <TableHead>
             <TableRow sx={styles.tableHeadRow}>
@@ -88,7 +88,7 @@ function ProductTable() {
               <TableCell sx={styles.tableCellHeader}>Action</TableCell>
             </TableRow>
           </TableHead>
-          <TableBody>
+          <TableBody sx={{}}>
             {data.length > 0 ? (
               data.map((row, index) => (
                 <TableRow sx={styles.tableRow} key={index}>

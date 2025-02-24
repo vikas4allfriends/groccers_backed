@@ -108,7 +108,7 @@ const AddMeasuringUnit = ({ drawerWidth, measuringUnit = null }) => {
             </Box>
 
             {/* Snackbar Notification */}
-            <Custom_Snackbar />
+            {/* <Custom_Snackbar /> */}
             {/* Form Content */}
             <Grid container maxWidth={true} size={{ xs: 6, md: 8, lg: 6 }} spacing={1} sx={styles.mainGrid}>
               <Card sx={styles.card}>

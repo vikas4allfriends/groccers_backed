@@ -16,6 +16,7 @@ const ProductTableCss = (theme) => ({
         backgroundColor: "#000000",
         borderRadius: "4px",
       },
+      // height:'50vh'
     },
     tableHeadRow: {
       backgroundColor: "#efefef",

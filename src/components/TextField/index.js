@@ -20,10 +20,13 @@ export const renderTextFieldSmall =
         const styles = LoginCss(theme);
         return (
             <Field name={name}>
-                {({ field, meta, form: { setFieldValue } }) => (
+                {({ field, meta, form: { setFieldValue } }) => {
+                        console.log("Field object for:", name, field); // ✅ Logs field object
+                return(
                     <TextField
                         sx={styles.StyledTextField}
                         {...field}
+                        value={field.value || ""}  // Ensure initial value is used
                         label={label}
                         type={
                             isPassword
@@ -110,7 +113,7 @@ export const renderTextFieldSmall =
                                 </MenuItem>
                             ))}
                     </TextField>
-                )}
+                )}}
             </Field>
         )
     }

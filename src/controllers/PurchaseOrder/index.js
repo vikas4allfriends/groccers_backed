@@ -349,11 +349,13 @@ export const getAllPurchaseOrders = async (req) => {
       }),
     });
 
+    const totalPages = Math.ceil(totalRecords / limit);
+
     // Return response with orders and totalRecords
     return new Response(
       JSON.stringify({
         success: true,
-        data: { orders, totalRecords },
+        data: { orders, pagination: { totalPages, currentPage: page, totalItems: totalRecords } },
       }),
       { status: 200 }
     );

@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { Typography, Box, Grid, Button, useTheme } from "@mui/material";
+import { Typography, Box, Grid2, Button, useTheme } from "@mui/material";
 import AddIcon from "@mui/icons-material/Add";
 import SearchBox from "../../../../components/SearchBox";
 
@@ -18,7 +18,7 @@ const PurchaseOrder = ({ drawerWidth }) => {
     };
 
     return (
-        <Box sx={styles.containerBox}>
+        <Box sx={[styles.containerBox]}>
             <Box
                 component="main"
                 sx={{
@@ -56,12 +56,12 @@ const PurchaseOrder = ({ drawerWidth }) => {
                 </Box>
 
                 {/* Table Section  */}
-                <Grid container spacing={3}>
-                    <Grid item xs={12}>
+                <Grid2 container spacing={3}>
+                    <Grid2 size={12} sx={{}}>
                         {/* Table content */}
                         <PurchaseOrderTable />
-                    </Grid>
-                </Grid>
+                    </Grid2>
+                </Grid2>
             </Box>
         </Box>
     );

@@ -1,4 +1,19 @@
-import { ADD_MEASURMENT_SUCESS, ADD_PRODUCT_CATEGORY_SUCESS, ADD_PRODUCT_COMPANY_SUCESS, ADD_PRODUCT_SUCESS, ADD_SHOP_SUCESS, DELETE_MEASURMENT_REQUESTED, DELETE_MEASURMENT_SUCESS, GET_MEASURMENT_SUCESS, GET_PRODUCT_CATEGORY_SUCESS, GET_PRODUCT_COMPANY_SUCESS, GET_PRODUCTS_SUCESS, GET_PURCHASE_ORDER_SUCESS, GET_SALES_ORDER_SUCESS, GET_SHOPS_SUCESS, UPDATE_MEASURMENT_REQUESTED, UPDATE_MEASURMENT_SUCESS } from "../../../constants";
+import {
+    ADD_MEASURMENT_SUCESS,
+    ADD_PRODUCT_CATEGORY_SUCESS,
+    ADD_PRODUCT_COMPANY_SUCESS,
+    ADD_PRODUCT_SUCESS, ADD_SHOP_SUCESS,
+    DELETE_MEASURMENT_SUCESS,
+    DELETE_SHOP_SUCESS,
+    GET_MEASURMENT_SUCESS,
+    GET_PRODUCT_CATEGORY_SUCESS,
+    GET_PRODUCT_COMPANY_SUCESS,
+    GET_PRODUCTS_SUCESS,
+    GET_PURCHASE_ORDER_SUCESS,
+    GET_SALES_ORDER_SUCESS,
+    GET_SHOPS_SUCESS,
+    UPDATE_MEASURMENT_SUCESS
+} from "../../../constants";
 import { navigate } from '../../../utils/navigation';
 
 const initialState = {
@@ -28,11 +43,11 @@ export const Product_Data = (state = initialState, action) => {
 
         case DELETE_MEASURMENT_SUCESS:
             console.log('DELETE_MEASURMENT_SUCESS==', action.payload)
-            let finalList = state.measurmentUnit.filter((item)=>{
+            let finalList = state.measurmentUnit.filter((item) => {
                 return item._id !== action.payload.deletedId
             })
             console.log('finalList==', finalList)
-            return {...state, measurmentUnit:finalList}
+            return { ...state, measurmentUnit: finalList }
 
         case GET_PRODUCT_CATEGORY_SUCESS:
             // console.log('payload---', action.payload.data)
@@ -56,7 +71,7 @@ export const Product_Data = (state = initialState, action) => {
 
         case ADD_PRODUCT_SUCESS:
             console.log('ADD_PRODUCT_SUCESS payload---', action.payload)
-        // return { ...state, ProductList: action.payload.products }
+            return { ...state }
 
         case GET_SHOPS_SUCESS:
             // console.log('payload====', action.payload)
@@ -65,6 +80,10 @@ export const Product_Data = (state = initialState, action) => {
         case ADD_SHOP_SUCESS:
             console.log('action.payload--', action.payload)
             return { ...state }
+
+            case DELETE_SHOP_SUCESS:
+            // console.log('payload====', action.payload)
+            return { ...state, ShopsList: action.payload.shops }
 
         case GET_SALES_ORDER_SUCESS:
             console.log('GET_SALES_ORDER_SUCESS payload====', action.payload)

@@ -15,8 +15,11 @@ import {
 } from "@mui/material";
 import VisibilityIcon from "@mui/icons-material/Visibility";
 import ProductTableCss from "../../../css/ProductTableCss";
-import {Get_Permission} from '../../../services/page/Permission';
+import {Get_Permission, Delete_Permission} from '../../../services/page/Permission';
 import {useSelector} from 'react-redux';
+import DeleteOutlineOutlinedIcon from '@mui/icons-material/DeleteOutlineOutlined';
+import UpdateIcon from '@mui/icons-material/Update';
+import {navigate} from '../../../utils/navigation';
 
 function PermissionTable() {
   const theme = useTheme();
@@ -29,6 +32,13 @@ function PermissionTable() {
     Get_Permission()
   }, [])
   
+    const handleUpdateClick = (unit) => {
+      navigate(`/Permission/Add?edit=${unit._id}`); // Navigate with query param
+    };
+  
+    const handleDeleteClick = (row) => {
+      Delete_Permission({id:row._id, modelName:'UserPermissions'})
+    };
 
   return (
     <>
@@ -56,29 +66,16 @@ function PermissionTable() {
                 </TableCell> */}
                 <TableCell sx={styles.tableCell}>
                   {row.name}
-                </TableCell>
-                {/* <TableCell sx={styles.tableCell}>
-                  {row.subscriptionPlan}
-                </TableCell>
+                </TableCell>                
                 <TableCell sx={styles.tableCell}>
-                  {row.subscriptionEndDate}
-                </TableCell>
-                <TableCell sx={styles.tableCell}>
-                  <Typography
-                    sx={{
-                      ...styles.statusTypography,
-                      ...(row.Status.toLowerCase() === "active"
-                        ? styles.statusActive
-                        : styles.statusDeactive),
-                    }}
-                  >
-                    {row.Status}
-                  </Typography>
-                </TableCell> */}
-                <TableCell sx={styles.tableCell}>
-                  <IconButton size="small">
-                    <VisibilityIcon />
+                  <IconButton size="small" onClick={() => handleUpdateClick(row)}>                    
+                    <UpdateIcon />
                   </IconButton>
+
+                  <IconButton size="small" onClick={() => handleDeleteClick(row)}>                    
+                    <DeleteOutlineOutlinedIcon color='danger' sx={{color:'red'}} />
+                  </IconButton>
+
                 </TableCell>
               </TableRow>
             ))}
